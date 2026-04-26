@@ -6,9 +6,6 @@
   </picture>
 </p>
 
-<h1 align="center" style="font-size: 3em;">skill-hub</h1>
-<h3 align="center">统一管理、分发和治理 MCP Server、Agent、Skill 与 Prompt 的私有化 Hub。</h3>
-
 <p align="center">
   <a href="./README.md">English</a> · 简体中文
 </p>
@@ -27,6 +24,10 @@
 
 <p align="center">
   <a href="https://github.com/yaogdu/skill-hub">GitHub</a> · <a href="https://github.com/yaogdu/skill-hub/releases">Releases</a> · <a href="#quick-start-zh">快速开始</a> · <a href="#documentation-map-zh">文档导航</a> · <a href="./README.md">English README</a> · <a href="https://discord.gg/HTYNjF2y2t">Discord</a>
+</p>
+
+<p align="center">
+  <strong>统一管理、分发和治理</strong> MCP Server、Agent、Skill 与 Prompt 的私有化 Hub。
 </p>
 
 `skill-hub` 是一个面向 MCP Server、AI Agent、Skill、Prompt 的统一注册中心与分发中心，重点服务于团队内部沉淀、私有化部署、统一治理和标准化消费。

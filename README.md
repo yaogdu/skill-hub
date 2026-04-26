@@ -6,9 +6,6 @@
   </picture>
 </p>
 
-<h1 align="center" style="font-size: 3em;">skill-hub</h1>
-<h3 align="center">Build. Deploy. Discover. One registry for MCP servers, agents, skills, and prompts.</h3>
-
 <p align="center">
   English · <a href="./README.zh-CN.md">简体中文</a>
 </p>
@@ -27,6 +24,10 @@
 
 <p align="center">
   <a href="https://github.com/yaogdu/skill-hub">GitHub</a> · <a href="https://github.com/yaogdu/skill-hub/releases">Releases</a> · <a href="#quick-start">Quick Start</a> · <a href="#documentation-map">Documentation</a> · <a href="./README.zh-CN.md">中文说明</a> · <a href="https://discord.gg/HTYNjF2y2t">Discord</a>
+</p>
+
+<p align="center">
+  <strong>Build. Deploy. Discover.</strong> One registry for MCP servers, agents, skills, and prompts.
 </p>
 
 ---
