@@ -9,6 +9,10 @@
 <h1 align="center" style="font-size: 3em;">skill-hub</h1>
 <h3 align="center">Build. Deploy. Discover. One registry for MCP servers, agents, skills, and prompts.</h3>
 
+<p align="center">
+  English · <a href="./README.zh-CN.md">简体中文</a>
+</p>
+
 <br/>
 
 <p align="center">

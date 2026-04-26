@@ -1,6 +1,6 @@
 # skill-hub 中文说明
 
-[English README](./README.md)
+[English](./README.md) · 简体中文
 
 `skill-hub` 是一个面向 MCP Server、AI Agent、Skill、Prompt 的统一注册中心与分发中心，重点服务于团队内部沉淀、私有化部署、统一治理和标准化消费。
 
