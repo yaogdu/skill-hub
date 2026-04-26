@@ -348,10 +348,7 @@ func assetCursorKey(asset *models.AssetResponse) string {
 }
 
 func (s *registry) listAssetBackedPrompts(ctx context.Context, filter *database.PromptFilter, cursor string, limit int) ([]*models.PromptResponse, string, error) {
-	pageSize := limit
-	if pageSize < assetFallbackPageSize {
-		pageSize = assetFallbackPageSize
-	}
+	pageSize := max(limit, assetFallbackPageSize)
 
 	assetFilter := toAssetFallbackFilter(filter)
 	collected := make([]*models.PromptResponse, 0, limit)
@@ -431,10 +428,6 @@ func (s *registry) findAssetBackedAssetInStore(ctx context.Context, assets datab
 		return nil, err
 	}
 	return s.findAssetByExactNameInStore(ctx, assets, promptName, trimmedVersion)
-}
-
-func (s *registry) findAssetByExactName(ctx context.Context, promptName, version string) (*models.AssetResponse, error) {
-	return s.findAssetByExactNameInStore(ctx, s.assets, promptName, version)
 }
 
 func (s *registry) findAssetByExactNameInStore(ctx context.Context, assets database.AssetStore, promptName, version string) (*models.AssetResponse, error) {

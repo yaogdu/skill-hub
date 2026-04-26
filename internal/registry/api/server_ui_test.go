@@ -71,15 +71,15 @@ func TestNewUIHandler(t *testing.T) {
 			wantCacheControl: "no-store",
 		},
 		{
-			name:       "missing asset with extension returns 404",
-			path:       "/missing.js",
-			wantStatus: http.StatusNotFound,
+			name:             "missing asset with extension returns 404",
+			path:             "/missing.js",
+			wantStatus:       http.StatusNotFound,
 			wantCacheControl: "no-store",
 		},
 		{
-			name:       "missing asset in subdirectory returns 404",
-			path:       "/_next/static/missing.css",
-			wantStatus: http.StatusNotFound,
+			name:             "missing asset in subdirectory returns 404",
+			path:             "/_next/static/missing.css",
+			wantStatus:       http.StatusNotFound,
 			wantCacheControl: "no-store",
 		},
 		{

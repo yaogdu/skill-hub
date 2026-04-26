@@ -458,10 +458,6 @@ func providerFromPath(parts []string) (gitProvider, bool) {
 	}
 }
 
-func normalizeRemoteWebURL(raw string) (string, gitProvider, error) {
-	return normalizeRemoteWebURLWithProvider(raw, "")
-}
-
 func normalizeRemoteWebURLWithProvider(raw, providerHint string) (string, gitProvider, error) {
 	if strings.TrimSpace(raw) == "" {
 		return "", "", fmt.Errorf("git origin remote is empty")

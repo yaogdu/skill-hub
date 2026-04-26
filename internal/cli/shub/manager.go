@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -1176,9 +1177,7 @@ func cloneManagerAssetManifest(manifest models.AssetManifest) *models.AssetManif
 	}
 	if manifest.Metadata != nil {
 		cloned.Metadata = make(map[string]any, len(manifest.Metadata))
-		for key, value := range manifest.Metadata {
-			cloned.Metadata[key] = value
-		}
+		maps.Copy(cloned.Metadata, manifest.Metadata)
 	}
 	if manifest.Runtime.Install != nil {
 		install := *manifest.Runtime.Install
@@ -2252,9 +2251,7 @@ func writeClaudeMCPConfig(configPath string, managedServers map[string]any) (boo
 		}
 		merged[name] = server
 	}
-	for name, server := range managedServers {
-		merged[name] = server
-	}
+	maps.Copy(merged, managedServers)
 
 	if len(merged) == 0 {
 		delete(config, "mcpServers")

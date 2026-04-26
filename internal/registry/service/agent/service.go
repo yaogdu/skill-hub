@@ -362,10 +362,7 @@ func toAssetFallbackFilter(filter *database.AgentFilter) *database.AssetFilter {
 }
 
 func (s *registry) listAssetBackedAgents(ctx context.Context, filter *database.AgentFilter, cursor string, limit int) ([]*models.AgentResponse, string, error) {
-	pageSize := limit
-	if pageSize < assetFallbackPageSize {
-		pageSize = assetFallbackPageSize
-	}
+	pageSize := max(limit, assetFallbackPageSize)
 
 	assetFilter := toAssetFallbackFilter(filter)
 	collected := make([]*models.AgentResponse, 0, limit)

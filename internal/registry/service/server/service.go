@@ -256,7 +256,7 @@ func (s *registry) applyServerInTransaction(ctx context.Context, servers databas
 	if assets != nil {
 		if _, err := s.findAssetBackedAssetInStore(ctx, assets, req.Name, req.Version); err == nil {
 			return s.updateAssetBackedServerInStore(ctx, assets, req.Name, req.Version, req, nil)
-		} else if err != nil && !errors.Is(err, database.ErrNotFound) {
+		} else if !errors.Is(err, database.ErrNotFound) {
 			return nil, err
 		}
 	}
@@ -373,10 +373,7 @@ func toAssetFallbackFilter(filter *database.ServerFilter) *database.AssetFilter 
 }
 
 func (s *registry) listAssetBackedServers(ctx context.Context, filter *database.ServerFilter, cursor string, limit int) ([]*apiv0.ServerResponse, string, error) {
-	pageSize := limit
-	if pageSize < assetFallbackPageSize {
-		pageSize = assetFallbackPageSize
-	}
+	pageSize := max(limit, assetFallbackPageSize)
 	assetFilter := toAssetFallbackFilter(filter)
 	collected := make([]*apiv0.ServerResponse, 0, limit)
 	currentCursor := cursor

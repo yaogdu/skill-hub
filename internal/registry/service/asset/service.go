@@ -920,10 +920,7 @@ func paginateCompatibilityAssets(assets []*models.AssetResponse, cursor string, 
 	if start >= len(assets) {
 		return []*models.AssetResponse{}
 	}
-	end := start + limit
-	if end > len(assets) {
-		end = len(assets)
-	}
+	end := min(start+limit, len(assets))
 	return assets[start:end]
 }
 
@@ -960,11 +957,4 @@ func compareAssetWithCursor(asset *models.AssetResponse, cursor string) int {
 		return cmp
 	}
 	return strings.Compare(asset.Asset.Version, cursorVersion)
-}
-
-func max(left, right int) int {
-	if left > right {
-		return left
-	}
-	return right
 }

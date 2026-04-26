@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -122,7 +123,7 @@ func ResolvePublicActions(raw string, jwtConfigured bool) ([]PermissionAction, e
 
 	seen := make(map[PermissionAction]bool, len(allPublicActions))
 	actions := make([]PermissionAction, 0, len(allPublicActions))
-	for _, token := range strings.Split(trimmed, ",") {
+	for token := range strings.SplitSeq(trimmed, ",") {
 		action := PermissionAction(strings.TrimSpace(strings.ToLower(token)))
 		if action == "" {
 			return nil, fmt.Errorf("public actions contains an empty entry")
@@ -140,12 +141,7 @@ func ResolvePublicActions(raw string, jwtConfigured bool) ([]PermissionAction, e
 }
 
 func isKnownPublicAction(action PermissionAction) bool {
-	for _, candidate := range allPublicActions {
-		if candidate == action {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(allPublicActions, action)
 }
 
 // Check verifies if the session can perform the action on the resource.

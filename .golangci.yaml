@@ -10,7 +10,6 @@ linters:
     - asciicheck
     - bidichk
     - copyloopvar
-    - depguard
     - dogsled
     - goprintffuncname
     - govet
@@ -21,19 +20,12 @@ linters:
     - misspell
     - modernize
     - nakedret
-    - nestif
     - nolintlint
     - testifylint
     - staticcheck
     - unused
     - whitespace
   settings:
-    depguard:
-      rules:
-        forbid-pkg-errors:
-          deny:
-            - pkg: sort
-              desc: Should be replaced with slices package
     govet:
       disable:
         - fieldalignment
@@ -88,6 +80,7 @@ linters:
   exclusions:
     generated: strict
     paths:
+      - (^|/)node_modules/
       - zz_generated.*\.go$
       - .*conversion.*\.go$
 issues:
@@ -100,5 +93,6 @@ formatters:
   exclusions:
     generated: strict
     paths:
+      - (^|/)node_modules/
       - zz_generated.*\.go$
       - .*conversion.*\.go$

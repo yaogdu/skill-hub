@@ -66,7 +66,7 @@ jobs:
     env:
       HELM_PLUGIN_UNITTEST_VERSION: v1.0.3
       HELM_REGISTRY: ${{ secrets.HELM_REGISTRY || 'ghcr.io' }}
-      HELM_REPO: ${{ secrets.HELM_REPO || 'agentregistry-dev/agentregistry' }}
+      HELM_REPO: ${{ secrets.HELM_REPO || 'yaogdu/skill-hub' }}
     permissions:
       contents: write
       packages: write

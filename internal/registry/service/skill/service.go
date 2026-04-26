@@ -249,10 +249,7 @@ func toAssetFallbackFilter(filter *database.SkillFilter) *database.AssetFilter {
 }
 
 func (s *registry) listAssetBackedSkills(ctx context.Context, filter *database.SkillFilter, cursor string, limit int) ([]*models.SkillResponse, string, error) {
-	pageSize := limit
-	if pageSize < assetFallbackPageSize {
-		pageSize = assetFallbackPageSize
-	}
+	pageSize := max(limit, assetFallbackPageSize)
 
 	assetFilter := toAssetFallbackFilter(filter)
 	collected := make([]*models.SkillResponse, 0, limit)
@@ -370,10 +367,6 @@ func (s *registry) findAssetBackedAssetInStore(ctx context.Context, assets datab
 		return nil, err
 	}
 	return s.findAssetByExactNameInStore(ctx, assets, skillName, trimmedVersion)
-}
-
-func (s *registry) findAssetByExactName(ctx context.Context, skillName, version string) (*models.AssetResponse, error) {
-	return s.findAssetByExactNameInStore(ctx, s.assets, skillName, version)
 }
 
 func (s *registry) findAssetByExactNameInStore(ctx context.Context, assets database.AssetStore, skillName, version string) (*models.AssetResponse, error) {

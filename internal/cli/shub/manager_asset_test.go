@@ -84,10 +84,7 @@ func (registry *assetBackedRegistry) ListAssetsUpdatedSince(updatedSince, cursor
 	if limit <= 0 {
 		limit = len(result)
 	}
-	end := start + limit
-	if end > len(result) {
-		end = len(result)
-	}
+	end := min(start+limit, len(result))
 	page := result[start:end]
 	nextCursor := ""
 	if end < len(result) {

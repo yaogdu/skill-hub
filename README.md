@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/yaogdu/skill-hub">GitHub</a> · <a href="https://github.com/yaogdu/skill-hub/releases">Releases</a> · <a href="#quick-start">Quick Start</a> · <a href="#documentation-map">Documentation</a> · <a href="https://discord.gg/HTYNjF2y2t">Discord</a>
+  <a href="https://github.com/yaogdu/skill-hub">GitHub</a> · <a href="https://github.com/yaogdu/skill-hub/releases">Releases</a> · <a href="#quick-start">Quick Start</a> · <a href="#documentation-map">Documentation</a> · <a href="./README.zh-CN.md">中文说明</a> · <a href="https://discord.gg/HTYNjF2y2t">Discord</a>
 </p>
 
 ---
@@ -33,7 +33,9 @@
 
 `skill-hub` is an open-source registry and distribution hub for MCP servers, AI agents, skills, and prompts.
 
-This repository is a downstream, open-source fork of `agentregistry`, with the dashboard and user-facing workflow focused on self-hosted skill distribution, SHUB package publishing, API-key based access control, and GitHub/GitLab-backed fallback imports.
+This repository is a downstream, open-source fork of [`agentregistry`](https://github.com/agentregistry-dev/agentregistry), with the dashboard and user-facing workflow focused on self-hosted skill distribution, SHUB package publishing, API-key based access control, and GitHub/GitLab-backed fallback imports.
+
+It is primarily positioned for company-internal, private deployments: a team-owned skill and agent registry that you can run inside your own environment, govern with your own accounts and API keys, and connect to approved upstream sources only when you want to.
 
 Right now, the MCP servers and AI tools your team needs are spread across npm, PyPI, Docker Hub, GitHub repos, and random URLs. Nobody knows which ones are trustworthy, which versions work, or how to get them running. Every developer is doing their own manual Docker setup and IDE configuration.
 
@@ -150,6 +152,7 @@ You can then use either the Go CLI (`arctl`) or the npm wrapper (`npx @yaogdu-sk
 ## Documentation Map
 
 - [`README.md`](./README.md): product overview, deployment entry points, auth model, and SHUB workflow
+- [`README.zh-CN.md`](./README.zh-CN.md): Chinese overview for private deployment, operations, and onboarding
 - [`DEVELOPMENT.md`](./DEVELOPMENT.md): local development setup and contributor workflow
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md): architecture and SHUB package model
 - [`RELEASING.md`](./RELEASING.md): GitHub Release, npm wrapper publish, and release checklist

@@ -6,9 +6,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
-	"strings"
 
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
@@ -223,10 +224,6 @@ func (s *registryAPIKeyStore) CreateRegistryAPIKey(ctx context.Context, userID, 
 	trimmedName := strings.TrimSpace(name)
 	if strings.TrimSpace(userID) == "" || trimmedName == "" || strings.TrimSpace(secret) == "" {
 		return nil, fmt.Errorf("user id, key name, and secret are required")
-	}
-	prefix := trimmedName
-	if len(prefix) > 24 {
-		prefix = prefix[:24]
 	}
 	keyPrefix := secret
 	if len(keyPrefix) > 12 {

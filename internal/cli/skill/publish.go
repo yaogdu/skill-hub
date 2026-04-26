@@ -258,9 +258,12 @@ func resolveGitVersion() (string, error) {
 // validateGitRepository checks that the provided git repository URL uses a
 // supported provider and has the required repository/tree shape.
 func validateGitRepository(rawURL string) error {
-	_, _, _, err := gitutil.ParseGitURLWithProvider(rawURL, gitProviderFlag)
+	cloneURL, _, _, err := gitutil.ParseGitURLWithProvider(rawURL, gitProviderFlag)
 	if err != nil {
 		return err
+	}
+	if strings.TrimSpace(cloneURL) == "" {
+		return fmt.Errorf("git repository URL did not resolve to a clone URL")
 	}
 	return nil
 }

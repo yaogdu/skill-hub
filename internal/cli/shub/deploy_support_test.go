@@ -62,15 +62,6 @@ func (publisher *fakeUploadingPublisher) AssetPackageURL(assetID, version string
 	return "https://registry.example.test/v0/assets/" + url.PathEscape(assetID) + "/versions/" + url.PathEscape(version) + "/package"
 }
 
-type skillOnlyPublisher struct {
-	created *models.SkillJSON
-}
-
-func (publisher *skillOnlyPublisher) CreateSkill(skill *models.SkillJSON) (*models.SkillResponse, error) {
-	publisher.created = skill
-	return &models.SkillResponse{Skill: *skill}, nil
-}
-
 func TestDeployAssetDryRunFromDirectory(t *testing.T) {
 	dir := createSkillFixture(t, "1.0.0", "local/demo-skill", "# Demo\n")
 

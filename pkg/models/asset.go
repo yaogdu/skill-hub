@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -1115,7 +1116,7 @@ func assetSkillBody(asset Asset) string {
 }
 
 func titleFromSkillBody(body string) string {
-	for _, line := range strings.Split(body, "\n") {
+	for line := range strings.SplitSeq(body, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "#") {
 			return strings.TrimSpace(strings.TrimLeft(trimmed, "#"))
@@ -1400,8 +1401,6 @@ func cloneMap(values map[string]any) map[string]any {
 		return nil
 	}
 	cloned := make(map[string]any, len(values))
-	for key, value := range values {
-		cloned[key] = value
-	}
+	maps.Copy(cloned, values)
 	return cloned
 }

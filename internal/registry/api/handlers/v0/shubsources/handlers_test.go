@@ -129,7 +129,7 @@ func TestRegisterSHUBSourceEndpoints_MapsNotFound(t *testing.T) {
 
 func TestMapSourceErrorPreservesInvalidInput(t *testing.T) {
 	err := errors.New("x")
-	assert.False(t, errors.Is(err, database.ErrInvalidInput))
+	assert.NotErrorIs(t, err, database.ErrInvalidInput)
 }
 
 func newSourceTestAPI(t *testing.T) (*http.ServeMux, huma.API) {
