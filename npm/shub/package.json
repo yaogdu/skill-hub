@@ -1,0 +1,34 @@
+{
+  "name": "@yaogdu-skill-hub/shub",
+  "version": "0.1.1",
+  "description": "npm wrapper for running SHUB through the skill-hub Go binary",
+  "keywords": [
+    "shub",
+    "skill-hub",
+    "skills",
+    "codex",
+    "mcp"
+  ],
+  "homepage": "https://github.com/yaogdu/skill-hub#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yaogdu/skill-hub.git",
+    "directory": "npm/shub"
+  },
+  "bugs": {
+    "url": "https://github.com/yaogdu/skill-hub/issues"
+  },
+  "bin": {
+    "shub": "bin/shub.js"
+  },
+  "files": [
+    "bin/shub.js"
+  ],
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

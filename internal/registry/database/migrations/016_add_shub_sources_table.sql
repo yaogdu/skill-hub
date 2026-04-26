@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS shub_sources (
+    name TEXT PRIMARY KEY,
+    address TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

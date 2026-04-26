@@ -1,0 +1,167 @@
+{{- if .Values.rbac.enabled -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "agentregistry.fullname" . }}-{{ .Release.Namespace }}
+  labels:
+    {{- include "agentregistry.labels" . | nindent 4 }}
+  {{- $annotations := include "agentregistry.annotations" (dict "annotations" dict "context" $) }}
+  {{- if $annotations }}
+  annotations:
+    {{- $annotations | nindent 4 }}
+  {{- end }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  {{- if not .Values.rbac.watchedNamespaces }}
+  - apiGroups:
+      - kagent.dev
+    resources:
+      - agents
+      - remotemcpservers
+      - mcpservers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - secrets
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "agentregistry.fullname" . }}-{{ .Release.Namespace }}
+  labels:
+    {{- include "agentregistry.labels" . | nindent 4 }}
+  {{- $annotations := include "agentregistry.annotations" (dict "annotations" dict "context" $) }}
+  {{- if $annotations }}
+  annotations:
+    {{- $annotations | nindent 4 }}
+  {{- end }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "agentregistry.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "agentregistry.fullname" . }}-{{ .Release.Namespace }}
+{{- if .Values.rbac.watchedNamespaces }}
+{{/*
+watchedNamespaces is set — create a Role/RoleBinding per namespace for all
+namespace-scoped resources, always including the installation namespace.
+*/}}
+{{- range append .Values.rbac.watchedNamespaces .Release.Namespace | uniq }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "agentregistry.fullname" $ }}
+  namespace: {{ . }}
+  labels:
+    {{- include "agentregistry.labels" $ | nindent 4 }}
+  {{- $annotations := include "agentregistry.annotations" (dict "annotations" dict "context" $) }}
+  {{- if $annotations }}
+  annotations:
+    {{- $annotations | nindent 4 }}
+  {{- end }}
+rules:
+  - apiGroups:
+      - kagent.dev
+    resources:
+      - agents
+      - remotemcpservers
+      - mcpservers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - secrets
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "agentregistry.fullname" $ }}
+  namespace: {{ . }}
+  labels:
+    {{- include "agentregistry.labels" $ | nindent 4 }}
+  {{- $annotations := include "agentregistry.annotations" (dict "annotations" dict "context" $) }}
+  {{- if $annotations }}
+  annotations:
+    {{- $annotations | nindent 4 }}
+  {{- end }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "agentregistry.serviceAccountName" $ }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "agentregistry.fullname" $ }}
+{{- end }}
+{{- end }}
+{{- end }}

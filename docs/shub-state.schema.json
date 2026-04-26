@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shub.local/schema/shub-state.schema.json",
+  "title": "SHUB Local State",
+  "description": "Versioned local state stored at ~/.shub/state.json. This file is owned by the SHUB client and supports offline use, version switching, sync cursors, and doctor repair.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "installed",
+    "active"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "installed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/installedAsset"
+      },
+      "default": []
+    },
+    "active": {
+      "type": "object",
+      "description": "Maps assetId to the locally selected version.",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {}
+    },
+    "sync": {
+      "$ref": "#/$defs/syncState"
+    }
+  },
+  "$defs": {
+    "syncState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "type": "string"
+        },
+        "lastSyncedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "installedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registryName",
+        "assetId",
+        "name",
+        "version",
+        "category",
+        "registryHost",
+        "installDir",
+        "envDir",
+        "installedAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "registryName": {
+          "type": "string"
+        },
+        "assetId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*(/[a-z0-9][a-z0-9_-]*)+$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "searchText": {
+          "type": "string",
+          "description": "Offline summary text used for local search."
+        },
+        "version": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "prompt",
+            "agent",
+            "mcp"
+          ]
+        },
+        "registryHost": {
+          "type": "string"
+        },
+        "installDir": {
+          "type": "string"
+        },
+        "envDir": {
+          "type": "string",
+          "description": "Runtime directory path. Empty string means no isolated runtime was materialized."
+        },
+        "exportPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "runtime": {
+          "$ref": "#/$defs/runtimeStatus"
+        },
+        "exports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/exportRecord"
+          },
+          "default": []
+        },
+        "installedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "runtimeStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "checkedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metadataPath": {
+          "type": "string"
+        }
+      }
+    },
+    "exportRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assetId",
+        "version",
+        "target",
+        "mode",
+        "exportPath",
+        "sourcePath"
+      ],
+      "properties": {
+        "assetId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*(/[a-z0-9][a-z0-9_-]*)+$"
+        },
+        "version": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "codex",
+            "claude-code",
+            "cursor",
+            "aider",
+            "skills"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "prompt-file",
+            "rules-file",
+            "mcp-config",
+            "skill-dir"
+          ]
+        },
+        "exportPath": {
+          "type": "string"
+        },
+        "sourcePath": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

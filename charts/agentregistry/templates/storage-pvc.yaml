@@ -1,0 +1,22 @@
+{{- if and .Values.packageStorage.enabled (not .Values.packageStorage.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-storage" (include "agentregistry.fullname" .) }}
+  labels:
+    {{- include "agentregistry.labels" . | nindent 4 }}
+  {{- $annotations := include "agentregistry.annotations" (dict "annotations" dict "context" $) }}
+  {{- if $annotations }}
+  annotations:
+    {{- $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.packageStorage.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.packageStorage.size }}
+  {{- if .Values.packageStorage.storageClassName }}
+  storageClassName: {{ .Values.packageStorage.storageClassName | quote }}
+  {{- end }}
+{{- end }}

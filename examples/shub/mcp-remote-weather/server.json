@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "weather": {
+      "type": "http",
+      "url": "https://weather.example.com/mcp"
+    }
+  }
+}

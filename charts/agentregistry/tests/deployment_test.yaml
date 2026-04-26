@@ -1,0 +1,245 @@
+suite: Deployment
+templates:
+  - deployment.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - postgresql-secret.yaml
+
+tests:
+  - it: renders with default values
+    template: deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-agentregistry
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: uses server image as registry/repository/name:tag by default
+    template: deployment.yaml
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: '^ghcr.io/agentregistry-dev/agentregistry/server:[^@\s]+$'
+
+  - it: uses digest when image.digest is set
+    template: deployment.yaml
+    set:
+      image.digest: sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "^ghcr.io/agentregistry-dev/agentregistry/server@sha256:[0-9a-fA-F]{64}"
+
+
+
+  - it: sets replicaCount
+    template: deployment.yaml
+    set:
+      replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: has hardcoded RollingUpdate strategy
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.strategy.type
+          value: RollingUpdate
+
+  - it: has standard labels
+    template: deployment.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: agentregistry
+            app.kubernetes.io/managed-by: Helm
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: agentregistry
+
+  - it: injects POSTGRES_PASSWORD from postgresql secret when bundled is enabled
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-agentregistry-postgresql
+                key: POSTGRES_PASSWORD
+
+  - it: injects JWT private key from secret
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AGENT_REGISTRY_JWT_PRIVATE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-agentregistry
+                key: AGENT_REGISTRY_JWT_PRIVATE_KEY
+
+  - it: sets AGENT_REGISTRY_DATABASE_URL pointing at bundled postgres by default
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AGENT_REGISTRY_DATABASE_URL
+            value: "postgres://agentregistry:$(POSTGRES_PASSWORD)@RELEASE-NAME-agentregistry-postgresql:5432/agentregistry?sslmode=disable"
+
+  - it: sets AGENT_REGISTRY_DATABASE_URL directly when database.postgres.url is set
+    template: deployment.yaml
+    set:
+      database.postgres.bundled.enabled: false
+      database.postgres.url: "postgres://user:pass@host:5432/db?sslmode=disable"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AGENT_REGISTRY_DATABASE_URL
+            value: "postgres://user:pass@host:5432/db?sslmode=disable"
+
+  - it: does not inject POSTGRES_PASSWORD when url is set (bundled enabled or disabled)
+    template: deployment.yaml
+    set:
+      database.postgres.url: "postgres://user:pass@host:5432/db"
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+
+  - it: applies pod security context by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1001
+
+  - it: applies container security context by default
+    template: deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+
+  - it: mounts tmp volume when readOnlyRootFilesystem is true
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+
+  - it: uses envFrom for configmap
+    template: deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            configMapRef:
+              name: RELEASE-NAME-agentregistry-config
+
+  - it: applies liveness probe by default
+    template: deployment.yaml
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].livenessProbe
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: http
+
+  - it: applies readiness probe by default
+    template: deployment.yaml
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  - it: applies startup probe by default
+    template: deployment.yaml
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].startupProbe
+
+  - it: uses config.existingSecret for AGENT_REGISTRY_JWT_PRIVATE_KEY when set
+    template: deployment.yaml
+    set:
+      config.existingSecret: my-existing-secret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AGENT_REGISTRY_JWT_PRIVATE_KEY
+            valueFrom:
+              secretKeyRef:
+                name: my-existing-secret
+                key: AGENT_REGISTRY_JWT_PRIVATE_KEY
+
+
+  - it: adds checksum annotations for config and secret
+    template: deployment.yaml
+    asserts:
+      - isNotNull:
+          path: spec.template.metadata.annotations["checksum/config"]
+      - isNotNull:
+          path: spec.template.metadata.annotations["checksum/secret"]
+
+  - it: applies fullnameOverride
+    template: deployment.yaml
+    set:
+      fullnameOverride: myapp
+    asserts:
+      - equal:
+          path: metadata.name
+          value: myapp
+
+  # ── Init container (bundled PostgreSQL) ──────────────────────────────────────
+
+  - it: includes wait-for-postgres init container when bundled is enabled
+    template: deployment.yaml
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.initContainers
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-postgres
+
+  - it: does not include init container when bundled is disabled
+    template: deployment.yaml
+    set:
+      database.postgres.bundled.enabled: false
+      database.postgres.url: "postgres://user:pass@host:5432/db"
+    asserts:
+      - isNull:
+          path: spec.template.spec.initContainers
+
+  - it: does not include init container when bundled is enabled but url is also set
+    template: deployment.yaml
+    set:
+      database.postgres.url: "postgres://user:pass@host:5432/db"
+    asserts:
+      - isNull:
+          path: spec.template.spec.initContainers

@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shub.local/schema/shub-skill-frontmatter.schema.json",
+  "title": "SHUB SKILL Frontmatter",
+  "description": "Canonical YAML frontmatter schema for SKILL.md packages authored for SHUB.",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "version",
+    "shub"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "allowed-tools": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "shub": {
+      "$ref": "#/$defs/shub"
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "shub": {
+            "properties": {
+              "category": {
+                "const": "prompt"
+              }
+            },
+            "required": [
+              "category"
+            ]
+          }
+        },
+        "required": [
+          "shub"
+        ]
+      },
+      "then": {
+        "properties": {
+          "shub": {
+            "properties": {
+              "entry": {
+                "properties": {
+                  "kind": {
+                    "const": "skill-body"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "runtime": {
+                "properties": {
+                  "type": {
+                    "const": "none"
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shub": {
+            "properties": {
+              "category": {
+                "const": "mcp"
+              }
+            },
+            "required": [
+              "category"
+            ]
+          }
+        },
+        "required": [
+          "shub"
+        ]
+      },
+      "then": {
+        "properties": {
+          "shub": {
+            "properties": {
+              "entry": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "mcp-config",
+                      "command"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              },
+              "runtime": {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "none",
+                      "python",
+                      "node",
+                      "binary"
+                    ]
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "shub": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "id",
+        "category",
+        "entry",
+        "runtime"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "shub.skill/v1alpha1"
+        },
+        "id": {
+          "type": "string",
+          "description": "Canonical namespace/name identifier.",
+          "pattern": "^[a-z0-9][a-z0-9_-]*(/[a-z0-9][a-z0-9_-]*)+$"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "prompt",
+            "agent",
+            "mcp"
+          ]
+        },
+        "entry": {
+          "$ref": "#/$defs/entry"
+        },
+        "runtime": {
+          "$ref": "#/$defs/runtime"
+        },
+        "exports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/export"
+          },
+          "default": []
+        },
+        "hooks": {
+          "$ref": "#/$defs/hooks"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Arbitrary non-executable metadata used for search and display.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "path"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "skill-body",
+            "command",
+            "python-module",
+            "node-module",
+            "binary",
+            "mcp-config"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "none",
+            "python",
+            "node",
+            "binary"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "install": {
+          "$ref": "#/$defs/install"
+        }
+      }
+    },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "none",
+            "uv",
+            "pip",
+            "npm",
+            "pnpm",
+            "yarn",
+            "binary"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "lockfile": {
+          "type": "string"
+        }
+      }
+    },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target",
+        "mode",
+        "source"
+      ],
+      "properties": {
+        "target": {
+          "type": "string",
+          "enum": [
+            "codex",
+            "claude-code",
+            "cursor",
+            "aider",
+            "skills"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "prompt-file",
+            "rules-file",
+            "mcp-config",
+            "skill-dir"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetPath": {
+          "type": "string"
+        }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "post_install": {
+          "$ref": "#/$defs/command"
+        },
+        "post_pull": {
+          "$ref": "#/$defs/command"
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run"
+      ],
+      "properties": {
+        "run": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

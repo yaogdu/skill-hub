@@ -1,0 +1,324 @@
+# @section Global parameters
+
+global:
+  # -- Global container image registry override
+  imageRegistry: ""
+  # -- Global Docker registry secret names
+  imagePullSecrets: []
+
+# @section Common parameters
+
+# -- Override the name of the chart
+nameOverride: ""
+# -- Override the full name of the chart
+fullnameOverride: ""
+# -- Labels to add to all deployed resources
+commonLabels: {}
+# -- Annotations to add to all deployed resources
+commonAnnotations: {}
+
+# @section Agent Registry image parameters
+
+image:
+  # -- Agent Registry image registry
+  registry: ghcr.io
+  # -- Agent Registry image repository (org/path, excluding the image name)
+  repository: agentregistry-dev/agentregistry
+  # -- Agent Registry image name
+  name: server
+  # -- Agent Registry image tag (immutable tags recommended). Leave empty to use .Chart.AppVersion.
+  tag: ""
+  # -- Agent Registry image digest (overrides tag if set)
+  digest: ""
+  # -- Agent Registry image pull policy
+  pullPolicy: IfNotPresent
+  # -- Agent Registry image pull secrets
+  pullSecrets: []
+
+# @section Agent Registry configuration
+
+# -- Number of Agent Registry replicas
+replicaCount: 1
+
+config:
+  # -- Listen address for the HTTP server
+  serverAddress: ":8080"
+  # -- Filesystem directory used by registry-hosted SHUB package storage
+  storageDir: "/var/lib/agentregistry/storage"
+  # -- Agent Gateway gRPC port
+  agentGatewayPort: "21212"
+  # -- Agent Registry MCP server port
+  agentRegistryMcpPort: "31313"
+  # -- Enable input validation on the registry API
+  enableRegistryValidation: "false"
+  # -- Disable the builtin seed data import on startup (363 bundled MCP server entries)
+  disableBuiltinSeed: "true"
+  # -- Path or URL to external seed data file (leave empty to disable external seeding)
+  seedFrom: ""
+  # -- Name of an existing Secret containing AGENT_REGISTRY_JWT_PRIVATE_KEY. When set, the chart will not create its own JWT secret.
+  existingSecret: ""
+  # -- Hex-encoded HMAC key for signing JWT tokens (must be valid hex, e.g. "a3f4b2c1..."). Ignored when existingSecret is set.
+  jwtPrivateKey: ""
+
+# @section Deployment parameters
+
+# -- Override default container command (evaluated as a template)
+command: []
+# -- Override default container args (evaluated as a template)
+args: []
+
+# -- Number of old ReplicaSets to retain
+revisionHistoryLimit: 10
+# -- Mount the service account token in the pod
+automountServiceAccountToken: true
+# -- Add custom entries to /etc/hosts
+hostAliases: []
+# -- Extra labels for Agent Registry pods
+podLabels: {}
+# -- Extra annotations for Agent Registry pods
+podAnnotations: {}
+# -- Lifecycle hooks for the Agent Registry container
+lifecycleHooks: {}
+# -- Seconds the pod needs to terminate gracefully
+terminationGracePeriodSeconds: ""
+# -- Priority class name for the Agent Registry pods
+priorityClassName: ""
+# -- Name of the scheduler to use
+schedulerName: ""
+# -- DNS policy for the pod
+dnsPolicy: ""
+# -- DNS configuration for the pod
+dnsConfig: {}
+# -- Topology spread constraints for pod assignment
+topologySpreadConstraints: []
+
+# @section Security context
+
+podSecurityContext:
+  # -- Enable pod-level security context
+  enabled: true
+  # -- Group ID for the pod filesystem
+  fsGroup: 1001
+  # -- Policy for changing fsGroup ownership
+  fsGroupChangePolicy: Always
+
+containerSecurityContext:
+  # -- Enable container-level security context
+  enabled: true
+  # -- User ID to run the container as
+  runAsUser: 1001
+  # -- Group ID to run the container as
+  runAsGroup: 1001
+  # -- Prevent running as root
+  runAsNonRoot: true
+  # -- Mount root filesystem as read-only
+  readOnlyRootFilesystem: true
+  # -- Allow privilege escalation
+  allowPrivilegeEscalation: false
+  capabilities:
+    # -- Linux capabilities to drop
+    drop:
+      - ALL
+  seccompProfile:
+    # -- Seccomp profile type
+    type: RuntimeDefault
+
+# @section Resource management
+
+# -- Resource requests and limits for the Agent Registry container
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+# @section Liveness probe
+
+livenessProbe:
+  # -- Enable liveness probe
+  enabled: true
+  # -- Initial delay before liveness check
+  initialDelaySeconds: 30
+  # -- Period between liveness checks
+  periodSeconds: 10
+  # -- Timeout for the liveness check
+  timeoutSeconds: 5
+  # -- Failure threshold for liveness check
+  failureThreshold: 6
+  # -- Success threshold for liveness check
+  successThreshold: 1
+
+# @section Readiness probe
+
+readinessProbe:
+  # -- Enable readiness probe
+  enabled: true
+  # -- Initial delay before readiness check
+  initialDelaySeconds: 10
+  # -- Period between readiness checks
+  periodSeconds: 5
+  # -- Timeout for the readiness check
+  timeoutSeconds: 3
+  # -- Failure threshold for readiness check
+  failureThreshold: 3
+  # -- Success threshold for readiness check
+  successThreshold: 1
+
+# @section Startup probe
+
+startupProbe:
+  # -- Enable startup probe
+  enabled: true
+  # -- Initial delay before startup check
+  initialDelaySeconds: 5
+  # -- Period between startup checks
+  periodSeconds: 5
+  # -- Timeout for the startup check
+  timeoutSeconds: 3
+  # -- Failure threshold for startup check (controls max startup time)
+  failureThreshold: 30
+  # -- Success threshold for startup check
+  successThreshold: 1
+
+# @section Extensibility
+
+# -- Array of extra environment variables for the Agent Registry container
+extraEnvVars: []
+
+# @section Package storage
+
+packageStorage:
+  # -- Enable a persistent volume for registry-hosted SHUB packages
+  enabled: true
+  # -- Existing PVC name to use instead of creating one
+  existingClaim: ""
+  # -- Access modes for the package storage PVC
+  accessModes:
+    - ReadWriteOnce
+  # -- Requested storage size for registry-hosted SHUB packages
+  size: 10Gi
+  # -- Optional storage class name for the package storage PVC
+  storageClassName: ""
+
+# @section Scheduling
+
+# -- Node labels for pod assignment
+nodeSelector: {}
+# -- Tolerations for pod assignment
+tolerations: []
+# -- Affinity rules for pod assignment (overrides preset if set)
+affinity: {}
+# -- Pod affinity preset (soft or hard)
+podAffinityPreset: ""
+# -- Pod anti-affinity preset (soft or hard)
+podAntiAffinityPreset: soft
+
+nodeAffinityPreset:
+  # -- Node affinity preset type (soft or hard)
+  type: ""
+  # -- Node label key for affinity
+  key: ""
+  # -- Node label values for affinity
+  values: []
+
+# @section Service configuration
+
+service:
+  # -- Kubernetes Service type
+  type: ClusterIP
+  ports:
+    # -- HTTP port
+    http: 12121
+    # -- Agent Gateway gRPC port
+    grpc: 21212
+    # -- MCP HTTP port
+    mcp: 31313
+  targetPorts:
+    # -- HTTP container target port
+    http: 8080
+    # -- gRPC container target port
+    grpc: 21212
+    # -- MCP container target port
+    mcp: 31313
+  nodePorts:
+    # -- NodePort for HTTP (when type is NodePort)
+    http: ""
+    # -- NodePort for gRPC (when type is NodePort)
+    grpc: ""
+    # -- NodePort for MCP (when type is NodePort)
+    mcp: ""
+  # -- Specific cluster IP (set to None for headless)
+  clusterIP: ""
+  # -- LoadBalancer IP
+  loadBalancerIP: ""
+  # -- LoadBalancer allowed source ranges
+  loadBalancerSourceRanges: []
+  # -- External traffic policy
+  externalTrafficPolicy: Cluster
+  # -- Service annotations
+  annotations: {}
+  # -- Session affinity (None or ClientIP)
+  sessionAffinity: None
+  # -- Session affinity configuration
+  sessionAffinityConfig: {}
+
+# @section Service account
+
+serviceAccount:
+  # -- Create a dedicated ServiceAccount
+  create: true
+  # -- Override the auto-generated ServiceAccount name
+  name: ""
+  # -- ServiceAccount annotations
+  annotations: {}
+  # -- Mount API token in the ServiceAccount
+  automountServiceAccountToken: true
+
+# @section RBAC
+
+rbac:
+  # -- Enable RBAC resource creation
+  enabled: true
+  # -- Namespaces Agent Registry is permitted to manage resources in.
+  # Empty list grants cluster-wide access via ClusterRole (default).
+  # Set to one or more namespaces to create a Role in each and restrict access accordingly.
+  # Note: read access to the cluster scoped APIs is always granted via ClusterRole regardless of this setting.
+  watchedNamespaces: []
+
+# @section Database
+
+database:
+  postgres:
+    # -- External PostgreSQL connection string.
+    # -- When set, Agent Registry connects here instead of the bundled instance. The bundled pod (if enabled) still deploys but is unused; the init container is skipped.
+    url: ""
+    # -- Enable features that require a pgvector-capable PostgreSQL instance. e.g. vector schema migrations, embeddings and semantic search.
+    vectorEnabled: false
+    # -- Bundled PostgreSQL — dev/eval only.
+    bundled:
+      # -- Deploy a PostgreSQL instance alongside Agent Registry
+      enabled: true
+      image:
+        # -- Bundled PostgreSQL image registry
+        registry: docker.io
+        # -- Bundled PostgreSQL image repository (org/namespace)
+        repository: library
+        # -- Bundled PostgreSQL image name
+        name: postgres
+        # -- Bundled PostgreSQL image tag
+        tag: "18"
+        # -- Bundled PostgreSQL image pull policy
+        pullPolicy: IfNotPresent
+      # -- DB name, user, and password are hardcoded ("agentregistry") for the bundled instance.
+      # -- PersistentVolumeClaim size for the bundled PostgreSQL data directory
+      storage: 5Gi
+      # -- Resource requests/limits for the bundled PostgreSQL container
+      resources:
+        requests:
+          cpu: 250m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi

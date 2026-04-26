@@ -1,0 +1,51 @@
+########################################################################
+#  https://kind.sigs.k8s.io/docs/user/configuration/
+########################################################################
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: agentregistry
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
+# network configuration
+networking:
+  # WARNING: It is _strongly_ recommended that you keep this the default
+  # (127.0.0.1) for security reasons. However, it is possible to change this.
+  apiServerAddress: "127.0.0.1"
+  # By default, the API server listens on a random open port.
+  # You may choose a specific port but probably don't need to in most cases.
+  # Using a random port makes it easier to spin up multiple clusters.
+  # apiServerPort: 6443
+
+# this may be used to e.g. disable beta / alpha APIs.
+runtimeConfig:
+  "api/alpha": "false"
+
+# Add extra certSANs so TLS verification works without --insecure-skip-tls-verify:
+#   "docker"      - for docker-in-docker (DinD) setups
+#   "172.17.0.1"  - Placeholder for the Docker bridge gateway. setup-kind.sh
+#                   detects the actual gateway at runtime and replaces this value
+#                   in a temp copy of this file before passing it to kind, so the
+#                   cert SAN and kubeconfig server URL always stay in sync.
+# Strategic merge patch is used instead of kubeadmConfigPatchesJSON6902 because
+# JSON6902 `add` to /apiServer/certSANs/- silently fails when certSANs is unset.
+kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiVersion: kubeadm.k8s.io/v1beta3
+    apiServer:
+      certSANs:
+        - "127.0.0.1"
+        - "docker"
+        - "172.17.0.1"
+
+# this is the default configuration for nodes
+nodes:
+  - role: control-plane
+# Example of port mappings for the control-plane node
+#    extraPortMappings:
+#      - containerPort: 30884
+#        hostPort: 30884
+#      - containerPort: 30885
+#        hostPort: 30885

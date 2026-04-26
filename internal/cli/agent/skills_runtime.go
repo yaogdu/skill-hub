@@ -1,0 +1,264 @@
+package agent
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"strings"
+
+	"github.com/agentregistry-dev/agentregistry/internal/cli/common/docker"
+	"github.com/agentregistry-dev/agentregistry/internal/cli/common/gitutil"
+	arclient "github.com/agentregistry-dev/agentregistry/internal/client"
+	"github.com/agentregistry-dev/agentregistry/pkg/models"
+)
+
+type resolvedSkillRef struct {
+	name    string
+	image   string // Docker/OCI image ref (mutually exclusive with repoURL)
+	repoURL string // Git repository URL (mutually exclusive with image)
+}
+
+func resolveSkillsForRuntime(manifest *models.AgentManifest) ([]resolvedSkillRef, error) {
+	if manifest == nil || len(manifest.Skills) == 0 {
+		return nil, nil
+	}
+
+	resolved := make([]resolvedSkillRef, 0, len(manifest.Skills))
+	for _, skill := range manifest.Skills {
+		ref, err := resolveSkillSource(skill)
+		if err != nil {
+			return nil, fmt.Errorf("resolve skill %q: %w", skill.Name, err)
+		}
+		resolved = append(resolved, ref)
+	}
+	slices.SortFunc(resolved, func(a, b resolvedSkillRef) int {
+		return strings.Compare(a.name, b.name)
+	})
+
+	return resolved, nil
+}
+
+// resolveSkillSource resolves a SkillRef to either a Docker image or a GitHub
+// repository URL. When the skill is fetched from the registry, Docker/OCI
+// packages are preferred; if none are available, the skill's GitHub repository
+// is used as a fallback.
+func resolveSkillSource(skill models.SkillRef) (resolvedSkillRef, error) {
+	image := strings.TrimSpace(skill.Image)
+	registrySkillName := strings.TrimSpace(skill.RegistrySkillName)
+	hasImage := image != ""
+	hasRegistry := registrySkillName != ""
+
+	if !hasImage && !hasRegistry {
+		return resolvedSkillRef{}, fmt.Errorf("one of image or registrySkillName is required")
+	}
+	if hasImage && hasRegistry {
+		return resolvedSkillRef{}, fmt.Errorf("only one of image or registrySkillName may be set")
+	}
+	if hasImage {
+		return resolvedSkillRef{name: skill.Name, image: image}, nil
+	}
+
+	version := strings.TrimSpace(skill.RegistrySkillVersion)
+	if version == "" {
+		version = "latest"
+	}
+
+	skillResp, err := fetchSkillFromRegistry(skill.RegistryURL, registrySkillName, version)
+	if err != nil {
+		return resolvedSkillRef{}, err
+	}
+	if skillResp == nil {
+		return resolvedSkillRef{}, fmt.Errorf("skill not found: %s (version %s)", registrySkillName, version)
+	}
+
+	// Prefer Docker/OCI image if available.
+	imageRef, err := extractSkillImageRef(skillResp)
+	if err == nil {
+		return resolvedSkillRef{name: skill.Name, image: imageRef}, nil
+	}
+
+	// Fall back to git repository.
+	repoURL, err := extractSkillRepoURL(skillResp)
+	if err != nil {
+		return resolvedSkillRef{}, fmt.Errorf("skill %s (version %s): no docker/oci package or git repository found", registrySkillName, version)
+	}
+	return resolvedSkillRef{name: skill.Name, repoURL: repoURL}, nil
+}
+
+// extractSkillRepoURL extracts a git repository URL from a skill response.
+func extractSkillRepoURL(skillResp *models.SkillResponse) (string, error) {
+	if skillResp == nil {
+		return "", fmt.Errorf("skill response is required")
+	}
+	if skillResp.Skill.Repository != nil &&
+		strings.TrimSpace(skillResp.Skill.Repository.URL) != "" {
+		return strings.TrimSpace(skillResp.Skill.Repository.URL), nil
+	}
+	return "", fmt.Errorf("no git repository found")
+}
+
+func fetchSkillFromRegistry(registryURL, skillName, version string) (*models.SkillResponse, error) {
+	// Use the default configured API client when registry URL is omitted.
+	if strings.TrimSpace(registryURL) == "" {
+		if apiClient == nil {
+			return nil, fmt.Errorf("API client not initialized")
+		}
+		if strings.EqualFold(version, "latest") {
+			return apiClient.GetSkill(skillName)
+		}
+		return apiClient.GetSkillVersion(skillName, version)
+	}
+
+	baseURL, err := normalizeSkillRegistryURL(registryURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: DI the client.
+	client := arclient.NewClient(baseURL, "")
+	if strings.EqualFold(version, "latest") {
+		resp, err := client.GetSkill(skillName)
+		if err != nil {
+			return nil, fmt.Errorf("fetch skill %q from %s: %w", skillName, baseURL, err)
+		}
+		return resp, nil
+	}
+
+	resp, err := client.GetSkillVersion(skillName, version)
+	if err != nil {
+		return nil, fmt.Errorf("fetch skill %q version %q from %s: %w", skillName, version, baseURL, err)
+	}
+	return resp, nil
+}
+
+func normalizeSkillRegistryURL(registryURL string) (string, error) {
+	trimmed := strings.TrimSpace(registryURL)
+	if trimmed == "" {
+		return "", fmt.Errorf("registry URL is required")
+	}
+
+	trimmed = strings.TrimSuffix(trimmed, "/")
+	if strings.HasSuffix(trimmed, "/v0") {
+		return trimmed, nil
+	}
+	return trimmed + "/v0", nil
+}
+
+func extractSkillImageRef(skillResp *models.SkillResponse) (string, error) {
+	if skillResp == nil {
+		return "", fmt.Errorf("skill response is required")
+	}
+	// TODO: add support for git-based skill fetching. Requires
+	// https://github.com/kagent-dev/kagent/pull/1365.
+	for _, pkg := range skillResp.Skill.Packages {
+		typ := strings.ToLower(strings.TrimSpace(pkg.RegistryType))
+		if (typ == "docker" || typ == "oci") && strings.TrimSpace(pkg.Identifier) != "" {
+			return strings.TrimSpace(pkg.Identifier), nil
+		}
+	}
+	return "", fmt.Errorf("no docker/oci package found")
+}
+
+func materializeSkillsForRuntime(skills []resolvedSkillRef, skillsDir string, verbose bool) error {
+	if strings.TrimSpace(skillsDir) == "" {
+		if len(skills) == 0 {
+			return nil
+		}
+		return fmt.Errorf("skills directory is required")
+	}
+
+	if err := os.RemoveAll(skillsDir); err != nil {
+		return fmt.Errorf("clear skills directory %s: %w", skillsDir, err)
+	}
+	if len(skills) == 0 {
+		return nil
+	}
+	if err := os.MkdirAll(skillsDir, 0o755); err != nil {
+		return fmt.Errorf("create skills directory %s: %w", skillsDir, err)
+	}
+
+	usedDirs := make(map[string]int)
+	for _, skill := range skills {
+		dirName := sanitizeSkillDirName(skill.name)
+		if count := usedDirs[dirName]; count > 0 {
+			dirName += "-" + strconv.Itoa(count+1)
+		}
+		usedDirs[dirName]++
+
+		targetDir := filepath.Join(skillsDir, dirName)
+		switch {
+		case skill.image != "":
+			if err := extractSkillImage(skill.image, targetDir, verbose); err != nil {
+				return fmt.Errorf("materialize skill %q from image %q: %w", skill.name, skill.image, err)
+			}
+		case skill.repoURL != "":
+			if err := gitutil.CloneAndCopy(skill.repoURL, targetDir, verbose); err != nil {
+				return fmt.Errorf("materialize skill %q from repo %q: %w", skill.name, skill.repoURL, err)
+			}
+		default:
+			return fmt.Errorf("skill %q has no image or repository URL", skill.name)
+		}
+	}
+	return nil
+}
+
+func sanitizeSkillDirName(name string) string {
+	out := strings.TrimSpace(strings.ToLower(name))
+	replacer := strings.NewReplacer(
+		"/", "-",
+		"\\", "-",
+		":", "-",
+		" ", "-",
+		".", "-",
+		"@", "-",
+	)
+	out = replacer.Replace(out)
+	for strings.Contains(out, "--") {
+		out = strings.ReplaceAll(out, "--", "-")
+	}
+	out = strings.Trim(out, "-")
+	if out == "" {
+		return "skill"
+	}
+	return out
+}
+
+func extractSkillImage(imageRef, targetDir string, verbose bool) error {
+	if strings.TrimSpace(imageRef) == "" {
+		return fmt.Errorf("image reference is required")
+	}
+
+	exec := docker.NewExecutor(verbose, "")
+	if !exec.ImageExistsLocally(imageRef) {
+		if err := exec.Pull(imageRef); err != nil {
+			return fmt.Errorf("pull image: %w", err)
+		}
+	}
+
+	containerID, err := exec.CreateContainer(imageRef)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = exec.RemoveContainer(containerID)
+	}()
+
+	tempDir, err := os.MkdirTemp("", "arctl-skill-extract-*")
+	if err != nil {
+		return fmt.Errorf("create temp directory: %w", err)
+	}
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
+	if err := exec.CopyFromContainer(containerID, "/.", tempDir); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(targetDir, 0o755); err != nil {
+		return fmt.Errorf("create target skill directory: %w", err)
+	}
+	if err := docker.CopyNonEmptyContents(tempDir, targetDir); err != nil {
+		return fmt.Errorf("copy extracted skill contents: %w", err)
+	}
+	return nil
+}

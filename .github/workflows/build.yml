@@ -1,0 +1,59 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  merge_group:
+    branches: [ main ]
+    types: [ checks_requested ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: "go.mod"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.9.x
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Cache npm dependencies
+      uses: actions/cache@v3
+      with:
+        path: ui/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('ui/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install UI Dependencies
+      run: npm ci
+      working-directory: ui
+
+    - name: Run UI Tests
+      run: npm test
+      working-directory: ui
+
+    - name: Build UI
+      run: make build-ui
+
+    - name: Start environment
+      run: make run-docker
+
+    - name: Run Integration Tests
+      run: make test

@@ -1,0 +1,220 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agentregistry.fullname" . }}
+  labels:
+    {{- include "agentregistry.labels" . | nindent 4 }}
+  {{- $annotations := include "agentregistry.annotations" (dict "annotations" dict "context" $) }}
+  {{- if $annotations }}
+  annotations:
+    {{- $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  {{- if .Values.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "agentregistry.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        checksum/postgresql-secret: {{ include (print $.Template.BasePath "/postgresql-secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.commonAnnotations }}
+        {{- toYaml .Values.commonAnnotations | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "agentregistry.selectorLabels" . | nindent 8 }}
+        {{- if .Values.podLabels }}
+        {{- toYaml .Values.podLabels | nindent 8 }}
+        {{- end }}
+        {{- if .Values.commonLabels }}
+        {{- toYaml .Values.commonLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- include "agentregistry.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "agentregistry.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      {{- $podSec := include "agentregistry.podSecurityContext" .Values.podSecurityContext }}
+      {{- if $podSec }}
+      securityContext:
+        {{- $podSec | nindent 8 }}
+      {{- end }}
+      {{- if .Values.hostAliases }}
+      hostAliases:
+        {{- toYaml .Values.hostAliases | nindent 8 }}
+      {{- end }}
+      {{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
+      {{- if .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml .Values.dnsConfig | nindent 8 }}
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName | quote }}
+      {{- end }}
+      {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName | quote }}
+      {{- end }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- $affinity := include "agentregistry.affinity" . }}
+      {{- if $affinity }}
+      affinity:
+        {{- $affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml .Values.topologySpreadConstraints | nindent 8 }}
+      {{- end }}
+      {{- if and .Values.database.postgres.bundled.enabled (eq .Values.database.postgres.url "") }}
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ include "agentregistry.postgresql.image" . }}
+          imagePullPolicy: {{ .Values.database.postgres.bundled.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "agentregistry.postgresql.fullname" . }} -p 5432 -U agentregistry; do
+                echo "waiting for postgres..."; sleep 2
+              done
+      {{- end }}
+      containers:
+        - name: agentregistry
+          image: {{ include "agentregistry.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.command }}
+          command:
+            {{- tpl (toYaml .Values.command) . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.args }}
+          args:
+            {{- tpl (toYaml .Values.args) . | nindent 12 }}
+          {{- end }}
+          {{- $containerSec := include "agentregistry.containerSecurityContext" .Values.containerSecurityContext }}
+          {{- if $containerSec }}
+          securityContext:
+            {{- $containerSec | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPorts.http }}
+              protocol: TCP
+            - name: grpc
+              containerPort: {{ .Values.service.targetPorts.grpc }}
+              protocol: TCP
+            - name: mcp
+              containerPort: {{ .Values.service.targetPorts.mcp }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "agentregistry.fullname" . }}-config
+          env:
+            - name: AGENT_REGISTRY_JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.existingSecret | default (include "agentregistry.fullname" .) }}
+                  key: AGENT_REGISTRY_JWT_PRIVATE_KEY
+            {{- if .Values.database.postgres.url }}
+            - name: AGENT_REGISTRY_DATABASE_URL
+              value: {{ .Values.database.postgres.url | quote }}
+            {{- else if .Values.database.postgres.bundled.enabled }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "agentregistry.fullname" . }}-postgresql
+                  key: POSTGRES_PASSWORD
+            - name: AGENT_REGISTRY_DATABASE_URL
+              value: {{ printf "postgres://agentregistry:$(POSTGRES_PASSWORD)@%s:5432/agentregistry?sslmode=disable" (include "agentregistry.postgresql.fullname" .) | quote }}
+            {{- else }}
+            {{ fail "No database connection configured. Set database.postgres.url or enable database.postgres.bundled." }}
+            {{- end }}
+            {{- if .Values.database.postgres.vectorEnabled }}
+            - name: AGENT_REGISTRY_EMBEDDINGS_ENABLED
+              value: "true"
+            - name: AGENT_REGISTRY_DATABASE_VECTOR_ENABLED
+              value: "true"
+            {{- end }}
+            {{- if .Values.extraEnvVars }}
+            {{- tpl (toYaml .Values.extraEnvVars) . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.startupProbe.enabled }}
+          startupProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.lifecycleHooks }}
+          lifecycle:
+            {{- toYaml .Values.lifecycleHooks | nindent 12 }}
+          {{- end }}
+          {{- if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- if .Values.packageStorage.enabled }}
+            - name: package-storage
+              mountPath: {{ .Values.config.storageDir }}
+            {{- end }}
+            {{- if .Values.containerSecurityContext.enabled }}
+            {{- if .Values.containerSecurityContext.readOnlyRootFilesystem }}
+            - name: tmp
+              mountPath: /tmp
+            {{- end }}
+            {{- end }}
+      volumes:
+        {{- if .Values.packageStorage.enabled }}
+        - name: package-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.packageStorage.existingClaim | default (printf "%s-storage" (include "agentregistry.fullname" .)) }}
+        {{- end }}
+        {{- if .Values.containerSecurityContext.enabled }}
+        {{- if .Values.containerSecurityContext.readOnlyRootFilesystem }}
+        - name: tmp
+          emptyDir: {}
+        {{- end }}
+        {{- end }}

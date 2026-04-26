@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shub.local/schema/shub-package-metadata.schema.json",
+  "title": "SHUB Package Metadata",
+  "description": "Metadata embedded at .shub/package.json inside a packaged SHUB tarball. This describes the package artifact and points to the derived manifest bundled alongside it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "assetId",
+    "name",
+    "category",
+    "version",
+    "createdAt",
+    "skillPath",
+    "manifestPath"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "shub.package/v1alpha1"
+    },
+    "assetId": {
+      "type": "string",
+      "description": "Canonical namespace/name identifier for the packaged asset.",
+      "pattern": "^[a-z0-9][a-z0-9_-]*(/[a-z0-9][a-z0-9_-]*)+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "prompt",
+        "agent",
+        "mcp"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp recorded when the archive was built."
+    },
+    "skillPath": {
+      "type": "string",
+      "const": "SKILL.md"
+    },
+    "manifestPath": {
+      "type": "string",
+      "const": ".shub/asset-manifest.json"
+    }
+  }
+}

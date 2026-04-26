@@ -1,0 +1,141 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number'
+
+env:
+  VERSION: ${{ github.event.inputs.version || github.ref_name }}
+  DOCKER_REGISTRY: ghcr.io
+
+jobs:
+  docker:
+    strategy:
+      matrix:
+        image:
+          - agentgateway
+          - server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: "go.mod"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.9.x
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+        version: v0.23.0
+        use: 'true'
+    - name: 'Build Images'
+      env:
+        DOCKER_BUILD_ARGS: "--push --platform linux/amd64,linux/arm64"
+        DOCKER_BUILDER: "docker buildx"
+      run: make docker-${{ matrix.image }}
+
+  release:
+    needs:
+    - docker
+    runs-on: ubuntu-latest
+    env:
+      HELM_PLUGIN_UNITTEST_VERSION: v1.0.3
+      HELM_REGISTRY: ${{ secrets.HELM_REGISTRY || 'ghcr.io' }}
+      HELM_REPO: ${{ secrets.HELM_REPO || 'agentregistry-dev/agentregistry' }}
+    permissions:
+      contents: write
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: "go.mod"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.9.x
+        registry-url: https://registry.npmjs.org
+
+    - name: Cache Helm plugins
+      uses: actions/cache@v4
+      with:
+        path: ~/.local/share/helm/plugins
+        key: ${{ runner.os }}-helm-plugins-unittest-${{ env.HELM_PLUGIN_UNITTEST_VERSION }}
+        restore-keys: |
+          ${{ runner.os }}-helm-plugins-unittest-
+
+
+    - name: Log in to Helm registry
+      env:
+        HELM_REGISTRY_USERNAME: ${{ secrets.HELM_REGISTRY_USERNAME || github.actor }}
+        HELM_REGISTRY_PASSWORD: ${{ secrets.HELM_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        printf "%s" "${HELM_REGISTRY_PASSWORD}" | helm registry login "${HELM_REGISTRY}" \
+          --username "${HELM_REGISTRY_USERNAME}" \
+          --password-stdin
+
+    - name: Build Release Artifacts
+      run: make release-cli
+
+    - name: Release Helm chart
+      run: make charts-release
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        generate_release_notes: true
+        files: |
+          bin/arctl-*
+          build/charts/*.tgz
+          build/charts/checksums.txt
+
+    - name: Publish @yaogdu-skill-hub/shub npm wrapper
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        set -euo pipefail
+        if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+          echo "NPM_TOKEN is not configured; skipping @yaogdu-skill-hub/shub npm publish."
+          exit 0
+        fi
+        VERSION_NO_V="${VERSION#v}"
+        cd npm/shub
+        npm version "${VERSION_NO_V}" --no-git-tag-version
+        npm publish --access public
+
+    - name: Log out of Helm registry
+      if: always()
+      run: helm registry logout "${HELM_REGISTRY}" || true
