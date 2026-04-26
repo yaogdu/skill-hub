@@ -1,5 +1,5 @@
-<svg width="780" height="180" viewBox="0 0 780 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(18 18)">
+<svg width="720" height="180" viewBox="0 0 720 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(104 18)">
     <path d="M46 34L46 110" stroke="#F97316" stroke-width="12" stroke-linecap="round"/>
     <path d="M46 34L116 34" stroke="#F97316" stroke-width="12" stroke-linecap="round"/>
     <path d="M46 110L116 110" stroke="#F97316" stroke-width="12" stroke-linecap="round"/>
@@ -9,6 +9,6 @@
     <circle cx="116" cy="34" r="18" fill="#F97316"/>
     <circle cx="116" cy="110" r="18" fill="#FDBA74"/>
   </g>
-  <text x="180" y="114" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="88" font-weight="700" letter-spacing="-3">skill-hub</text>
-  <text x="184" y="146" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600" letter-spacing="2">SELF-HOSTED SKILL REGISTRY</text>
+  <text x="268" y="114" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="88" font-weight="700" letter-spacing="-3">skill-hub</text>
+  <text x="272" y="146" fill="#475569" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600" letter-spacing="2">SELF-HOSTED SKILL REGISTRY</text>
 </svg>
