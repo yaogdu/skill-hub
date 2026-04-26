@@ -136,6 +136,129 @@ export type Argument = {
     };
 };
 
+export type Asset = {
+    allowedTools?: Array<string>;
+    category: string;
+    description: string;
+    id: string;
+    manifest: AssetManifest;
+    name: string;
+    source?: AssetSource;
+    sourceSkill: AssetSourceSkill;
+    status?: string;
+    version: string;
+};
+
+export type AssetCommand = {
+    run: Array<string>;
+};
+
+export type AssetEntry = {
+    args?: Array<string>;
+    kind: string;
+    path: string;
+};
+
+export type AssetExport = {
+    mode: string;
+    source: string;
+    target: string;
+    targetPath?: string;
+};
+
+export type AssetHooks = {
+    post_install?: AssetCommand;
+    post_pull?: AssetCommand;
+};
+
+export type AssetInstall = {
+    lockfile?: string;
+    path?: string;
+    strategy: string;
+};
+
+export type AssetListResponse = {
+    assets: Array<AssetResponse>;
+    metadata: AssetMetadata;
+};
+
+export type AssetManifest = {
+    allowedTools?: Array<string>;
+    category: string;
+    description: string;
+    entry: AssetEntry;
+    exports?: Array<AssetExport>;
+    hooks?: AssetHooks;
+    id: string;
+    metadata?: {
+        [key: string]: unknown;
+    };
+    name: string;
+    runtime: AssetRuntime;
+    schemaVersion: string;
+    sourceSkill: AssetSourceSkill;
+    version: string;
+};
+
+export type AssetMetadata = {
+    count: number;
+    nextCursor?: string;
+};
+
+export type AssetPackage = {
+    assetId: string;
+    contentType: string;
+    sha256: string;
+    sizeBytes: number;
+    uploadedAt: string;
+    version: string;
+};
+
+export type AssetPackageResponse = {
+    downloadUrl?: string;
+    package: AssetPackage;
+};
+
+export type AssetPublishRequest = {
+    manifest: AssetManifest;
+    source?: AssetSource;
+};
+
+export type AssetRegistryExtensions = {
+    isLatest: boolean;
+    publishedAt: string;
+    status: string;
+    updatedAt: string;
+};
+
+export type AssetResponse = {
+    _meta: AssetResponseMeta;
+    asset: Asset;
+};
+
+export type AssetResponseMeta = {
+    'io.modelcontextprotocol.registry/official'?: AssetRegistryExtensions;
+};
+
+export type AssetRuntime = {
+    install?: AssetInstall;
+    type: string;
+    version?: string;
+};
+
+export type AssetSource = {
+    commit?: string;
+    packageRef?: string;
+    packageType?: string;
+    repositoryUrl?: string;
+};
+
+export type AssetSourceSkill = {
+    body?: string;
+    bodyFormat: string;
+    path: string;
+};
+
 export type CreateProviderInput = {
     config?: {
         [key: string]: unknown;
@@ -663,6 +786,7 @@ export type SkillJson = {
     packages?: Array<SkillPackageInfo>;
     remotes?: Array<SkillRemoteInfo>;
     repository?: SkillRepository;
+    shub?: SkillShubMetadata;
     status?: string;
     title?: string;
     version: string;
@@ -721,6 +845,14 @@ export type SkillResponse = {
 
 export type SkillResponseMeta = {
     'io.modelcontextprotocol.registry/official'?: SkillRegistryExtensions;
+};
+
+export type SkillShubMetadata = {
+    assetId?: string;
+    category?: string;
+    manifest?: AssetManifest;
+    schemaVersion?: string;
+    source?: AssetSource;
 };
 
 export type Transport = {
@@ -997,6 +1129,247 @@ export type ApplyResponses = {
 };
 
 export type ApplyResponse = ApplyResponses[keyof ApplyResponses];
+
+export type ListAssetsV0Data = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string;
+        /**
+         * Number of items per page
+         */
+        limit?: number;
+        /**
+         * Filter assets updated since timestamp (RFC3339 datetime)
+         */
+        updated_since?: string;
+        /**
+         * Search assets by id, name, or description
+         */
+        search?: string;
+        /**
+         * Filter by version ('latest' for latest version, or an exact version like '1.2.3')
+         */
+        version?: string;
+        /**
+         * Filter by asset category
+         */
+        category?: 'prompt' | 'agent' | 'mcp';
+    };
+    url: '/v0/assets';
+};
+
+export type ListAssetsV0Errors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type ListAssetsV0Error = ListAssetsV0Errors[keyof ListAssetsV0Errors];
+
+export type ListAssetsV0Responses = {
+    /**
+     * OK
+     */
+    200: AssetListResponse;
+};
+
+export type ListAssetsV0Response = ListAssetsV0Responses[keyof ListAssetsV0Responses];
+
+export type CreateAssetV0Data = {
+    body: AssetPublishRequest;
+    path?: never;
+    query?: never;
+    url: '/v0/assets';
+};
+
+export type CreateAssetV0Errors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type CreateAssetV0Error = CreateAssetV0Errors[keyof CreateAssetV0Errors];
+
+export type CreateAssetV0Responses = {
+    /**
+     * OK
+     */
+    200: AssetResponse;
+};
+
+export type CreateAssetV0Response = CreateAssetV0Responses[keyof CreateAssetV0Responses];
+
+export type GetAssetLatestV0Data = {
+    body?: never;
+    path: {
+        /**
+         * URL-encoded asset id
+         */
+        assetID: string;
+    };
+    query?: never;
+    url: '/v0/assets/{assetID}';
+};
+
+export type GetAssetLatestV0Errors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetAssetLatestV0Error = GetAssetLatestV0Errors[keyof GetAssetLatestV0Errors];
+
+export type GetAssetLatestV0Responses = {
+    /**
+     * OK
+     */
+    200: AssetResponse;
+};
+
+export type GetAssetLatestV0Response = GetAssetLatestV0Responses[keyof GetAssetLatestV0Responses];
+
+export type GetAssetVersionsV0Data = {
+    body?: never;
+    path: {
+        /**
+         * URL-encoded asset id
+         */
+        assetID: string;
+    };
+    query?: never;
+    url: '/v0/assets/{assetID}/versions';
+};
+
+export type GetAssetVersionsV0Errors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetAssetVersionsV0Error = GetAssetVersionsV0Errors[keyof GetAssetVersionsV0Errors];
+
+export type GetAssetVersionsV0Responses = {
+    /**
+     * OK
+     */
+    200: AssetListResponse;
+};
+
+export type GetAssetVersionsV0Response = GetAssetVersionsV0Responses[keyof GetAssetVersionsV0Responses];
+
+export type GetAssetVersionV0Data = {
+    body?: never;
+    path: {
+        /**
+         * URL-encoded asset id
+         */
+        assetID: string;
+        /**
+         * URL-encoded asset version
+         */
+        version: string;
+    };
+    query?: never;
+    url: '/v0/assets/{assetID}/versions/{version}';
+};
+
+export type GetAssetVersionV0Errors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetAssetVersionV0Error = GetAssetVersionV0Errors[keyof GetAssetVersionV0Errors];
+
+export type GetAssetVersionV0Responses = {
+    /**
+     * OK
+     */
+    200: AssetResponse;
+};
+
+export type GetAssetVersionV0Response = GetAssetVersionV0Responses[keyof GetAssetVersionV0Responses];
+
+export type GetAssetPackageVersionV0Data = {
+    body?: never;
+    path: {
+        /**
+         * URL-encoded asset id
+         */
+        assetID: string;
+        /**
+         * URL-encoded asset version
+         */
+        version: string;
+    };
+    query?: never;
+    url: '/v0/assets/{assetID}/versions/{version}/package';
+};
+
+export type GetAssetPackageVersionV0Errors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type GetAssetPackageVersionV0Error = GetAssetPackageVersionV0Errors[keyof GetAssetPackageVersionV0Errors];
+
+export type GetAssetPackageVersionV0Responses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type UploadAssetPackageV0Data = {
+    body: Blob | File;
+    headers?: {
+        /**
+         * Package content type
+         */
+        'Content-Type'?: string;
+    };
+    path: {
+        /**
+         * URL-encoded asset id
+         */
+        assetID: string;
+        /**
+         * URL-encoded asset version
+         */
+        version: string;
+    };
+    query?: never;
+    url: '/v0/assets/{assetID}/versions/{version}/package';
+};
+
+export type UploadAssetPackageV0Errors = {
+    /**
+     * Error
+     */
+    default: ErrorModel;
+};
+
+export type UploadAssetPackageV0Error = UploadAssetPackageV0Errors[keyof UploadAssetPackageV0Errors];
+
+export type UploadAssetPackageV0Responses = {
+    /**
+     * OK
+     */
+    200: AssetPackageResponse;
+};
+
+export type UploadAssetPackageV0Response = UploadAssetPackageV0Responses[keyof UploadAssetPackageV0Responses];
 
 export type ListDeploymentsData = {
     body?: never;

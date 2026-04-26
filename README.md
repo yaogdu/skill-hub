@@ -13,8 +13,6 @@
   English · <a href="./README.zh-CN.md">简体中文</a>
 </p>
 
-<br/>
-
 <p align="center">
   <a href="https://github.com/yaogdu/skill-hub/stargazers"><img src="https://img.shields.io/github/stars/yaogdu/skill-hub?style=social" alt="GitHub Stars"></a>
   &nbsp;

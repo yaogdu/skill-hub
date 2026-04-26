@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApplyData, ApplyErrors, ApplyResponses, CancelDeploymentData, CancelDeploymentErrors, CancelDeploymentResponses, CreateAgentV0Data, CreateAgentV0Errors, CreateAgentV0Responses, CreatePromptV0Data, CreatePromptV0Errors, CreatePromptV0Responses, CreateProviderData, CreateProviderErrors, CreateProviderResponses, CreateServerV0Data, CreateServerV0Errors, CreateServerV0Responses, CreateSkillV0Data, CreateSkillV0Errors, CreateSkillV0Responses, DeleteAgentVersionV0Data, DeleteAgentVersionV0Errors, DeleteAgentVersionV0Responses, DeleteApplyData, DeleteApplyErrors, DeleteApplyResponses, DeletePromptVersionV0Data, DeletePromptVersionV0Errors, DeletePromptVersionV0Responses, DeleteProviderData, DeleteProviderErrors, DeleteProviderResponses, DeleteServerVersionV0Data, DeleteServerVersionV0Errors, DeleteServerVersionV0Responses, DeleteSkillVersionV0Data, DeleteSkillVersionV0Errors, DeleteSkillVersionV0Responses, DeployServerData, DeployServerErrors, DeployServerResponses, EditServerV0Data, EditServerV0Errors, EditServerV0Responses, GetAgentVersionsV0Data, GetAgentVersionsV0Errors, GetAgentVersionsV0Responses, GetAgentVersionV0Data, GetAgentVersionV0Errors, GetAgentVersionV0Responses, GetDeploymentData, GetDeploymentErrors, GetDeploymentLogsData, GetDeploymentLogsErrors, GetDeploymentLogsResponses, GetDeploymentResponses, GetHealthV0Data, GetHealthV0Errors, GetHealthV0Responses, GetPromptVersionsV0Data, GetPromptVersionsV0Errors, GetPromptVersionsV0Responses, GetPromptVersionV0Data, GetPromptVersionV0Errors, GetPromptVersionV0Responses, GetProviderData, GetProviderErrors, GetProviderResponses, GetServerReadmeV0Data, GetServerReadmeV0Errors, GetServerReadmeV0Responses, GetServerVersionReadmeV0Data, GetServerVersionReadmeV0Errors, GetServerVersionReadmeV0Responses, GetServerVersionsV0Data, GetServerVersionsV0Errors, GetServerVersionsV0Responses, GetServerVersionV0Data, GetServerVersionV0Errors, GetServerVersionV0Responses, GetSkillVersionsV0Data, GetSkillVersionsV0Errors, GetSkillVersionsV0Responses, GetSkillVersionV0Data, GetSkillVersionV0Errors, GetSkillVersionV0Responses, GetVersionV0Data, GetVersionV0Errors, GetVersionV0Responses, ListAgentsV0Data, ListAgentsV0Errors, ListAgentsV0Responses, ListDeploymentsData, ListDeploymentsErrors, ListDeploymentsResponses, ListPromptsV0Data, ListPromptsV0Errors, ListPromptsV0Responses, ListProvidersData, ListProvidersErrors, ListProvidersResponses, ListServersV0Data, ListServersV0Errors, ListServersV0Responses, ListSkillsV0Data, ListSkillsV0Errors, ListSkillsV0Responses, PingV0Data, PingV0Errors, PingV0Responses, RemoveDeploymentData, RemoveDeploymentErrors, RemoveDeploymentResponses } from './types.gen';
+import type { ApplyData, ApplyErrors, ApplyResponses, CancelDeploymentData, CancelDeploymentErrors, CancelDeploymentResponses, CreateAgentV0Data, CreateAgentV0Errors, CreateAgentV0Responses, CreateAssetV0Data, CreateAssetV0Errors, CreateAssetV0Responses, CreatePromptV0Data, CreatePromptV0Errors, CreatePromptV0Responses, CreateProviderData, CreateProviderErrors, CreateProviderResponses, CreateServerV0Data, CreateServerV0Errors, CreateServerV0Responses, CreateSkillV0Data, CreateSkillV0Errors, CreateSkillV0Responses, DeleteAgentVersionV0Data, DeleteAgentVersionV0Errors, DeleteAgentVersionV0Responses, DeleteApplyData, DeleteApplyErrors, DeleteApplyResponses, DeletePromptVersionV0Data, DeletePromptVersionV0Errors, DeletePromptVersionV0Responses, DeleteProviderData, DeleteProviderErrors, DeleteProviderResponses, DeleteServerVersionV0Data, DeleteServerVersionV0Errors, DeleteServerVersionV0Responses, DeleteSkillVersionV0Data, DeleteSkillVersionV0Errors, DeleteSkillVersionV0Responses, DeployServerData, DeployServerErrors, DeployServerResponses, EditServerV0Data, EditServerV0Errors, EditServerV0Responses, GetAgentVersionsV0Data, GetAgentVersionsV0Errors, GetAgentVersionsV0Responses, GetAgentVersionV0Data, GetAgentVersionV0Errors, GetAgentVersionV0Responses, GetAssetLatestV0Data, GetAssetLatestV0Errors, GetAssetLatestV0Responses, GetAssetPackageVersionV0Data, GetAssetPackageVersionV0Errors, GetAssetPackageVersionV0Responses, GetAssetVersionsV0Data, GetAssetVersionsV0Errors, GetAssetVersionsV0Responses, GetAssetVersionV0Data, GetAssetVersionV0Errors, GetAssetVersionV0Responses, GetDeploymentData, GetDeploymentErrors, GetDeploymentLogsData, GetDeploymentLogsErrors, GetDeploymentLogsResponses, GetDeploymentResponses, GetHealthV0Data, GetHealthV0Errors, GetHealthV0Responses, GetPromptVersionsV0Data, GetPromptVersionsV0Errors, GetPromptVersionsV0Responses, GetPromptVersionV0Data, GetPromptVersionV0Errors, GetPromptVersionV0Responses, GetProviderData, GetProviderErrors, GetProviderResponses, GetServerReadmeV0Data, GetServerReadmeV0Errors, GetServerReadmeV0Responses, GetServerVersionReadmeV0Data, GetServerVersionReadmeV0Errors, GetServerVersionReadmeV0Responses, GetServerVersionsV0Data, GetServerVersionsV0Errors, GetServerVersionsV0Responses, GetServerVersionV0Data, GetServerVersionV0Errors, GetServerVersionV0Responses, GetSkillVersionsV0Data, GetSkillVersionsV0Errors, GetSkillVersionsV0Responses, GetSkillVersionV0Data, GetSkillVersionV0Errors, GetSkillVersionV0Responses, GetVersionV0Data, GetVersionV0Errors, GetVersionV0Responses, ListAgentsV0Data, ListAgentsV0Errors, ListAgentsV0Responses, ListAssetsV0Data, ListAssetsV0Errors, ListAssetsV0Responses, ListDeploymentsData, ListDeploymentsErrors, ListDeploymentsResponses, ListPromptsV0Data, ListPromptsV0Errors, ListPromptsV0Responses, ListProvidersData, ListProvidersErrors, ListProvidersResponses, ListServersV0Data, ListServersV0Errors, ListServersV0Responses, ListSkillsV0Data, ListSkillsV0Errors, ListSkillsV0Responses, PingV0Data, PingV0Errors, PingV0Responses, RemoveDeploymentData, RemoveDeploymentErrors, RemoveDeploymentResponses, UploadAssetPackageV0Data, UploadAssetPackageV0Errors, UploadAssetPackageV0Responses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -82,6 +82,70 @@ export const apply = <ThrowOnError extends boolean = false>(options: Options<App
     ...options,
     headers: {
         'Content-Type': 'application/yaml',
+        ...options.headers
+    }
+});
+
+/**
+ * List SHUB assets
+ *
+ * Get a paginated list of SHUB-compatible assets from the registry compatibility layer
+ */
+export const listAssetsV0 = <ThrowOnError extends boolean = false>(options?: Options<ListAssetsV0Data, ThrowOnError>) => (options?.client ?? client).get<ListAssetsV0Responses, ListAssetsV0Errors, ThrowOnError>({ url: '/v0/assets', ...options });
+
+/**
+ * Create or publish asset
+ *
+ * Create a new SHUB asset version in the registry compatibility layer.
+ */
+export const createAssetV0 = <ThrowOnError extends boolean = false>(options: Options<CreateAssetV0Data, ThrowOnError>) => (options.client ?? client).post<CreateAssetV0Responses, CreateAssetV0Errors, ThrowOnError>({
+    url: '/v0/assets',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get latest asset version
+ *
+ * Get detailed information about the latest version of an asset
+ */
+export const getAssetLatestV0 = <ThrowOnError extends boolean = false>(options: Options<GetAssetLatestV0Data, ThrowOnError>) => (options.client ?? client).get<GetAssetLatestV0Responses, GetAssetLatestV0Errors, ThrowOnError>({ url: '/v0/assets/{assetID}', ...options });
+
+/**
+ * Get all versions of an asset
+ *
+ * Get all available versions for a specific asset id
+ */
+export const getAssetVersionsV0 = <ThrowOnError extends boolean = false>(options: Options<GetAssetVersionsV0Data, ThrowOnError>) => (options.client ?? client).get<GetAssetVersionsV0Responses, GetAssetVersionsV0Errors, ThrowOnError>({ url: '/v0/assets/{assetID}/versions', ...options });
+
+/**
+ * Get specific asset version
+ *
+ * Get detailed information about a specific asset version. Use version 'latest' to fetch the latest version.
+ */
+export const getAssetVersionV0 = <ThrowOnError extends boolean = false>(options: Options<GetAssetVersionV0Data, ThrowOnError>) => (options.client ?? client).get<GetAssetVersionV0Responses, GetAssetVersionV0Errors, ThrowOnError>({ url: '/v0/assets/{assetID}/versions/{version}', ...options });
+
+/**
+ * Download a published SHUB asset package
+ *
+ * Stream the package archive for a specific SHUB asset version hosted by the registry.
+ */
+export const getAssetPackageVersionV0 = <ThrowOnError extends boolean = false>(options: Options<GetAssetPackageVersionV0Data, ThrowOnError>) => (options.client ?? client).get<GetAssetPackageVersionV0Responses, GetAssetPackageVersionV0Errors, ThrowOnError>({ url: '/v0/assets/{assetID}/versions/{version}/package', ...options });
+
+/**
+ * Upload a SHUB asset package blob
+ *
+ * Upload a packaged SHUB asset archive for registry-hosted distribution.
+ */
+export const uploadAssetPackageV0 = <ThrowOnError extends boolean = false>(options: Options<UploadAssetPackageV0Data, ThrowOnError>) => (options.client ?? client).put<UploadAssetPackageV0Responses, UploadAssetPackageV0Errors, ThrowOnError>({
+    bodySerializer: null,
+    url: '/v0/assets/{assetID}/versions/{version}/package',
+    ...options,
+    headers: {
+        'Content-Type': 'application/gzip',
         ...options.headers
     }
 });

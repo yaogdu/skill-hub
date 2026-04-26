@@ -1,6 +1,33 @@
-# skill-hub 中文说明
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="img/agentregistry-logo.png">
+    <source media="(prefers-color-scheme: light)" srcset="img/agentgateway-logo-light.png">
+    <img src="img/agentregistry-logo.png" alt="skill-hub" width="500"/>
+  </picture>
+</p>
 
-[English](./README.md) · 简体中文
+<h1 align="center" style="font-size: 3em;">skill-hub</h1>
+<h3 align="center">统一管理、分发和治理 MCP Server、Agent、Skill 与 Prompt 的私有化 Hub。</h3>
+
+<p align="center">
+  <a href="./README.md">English</a> · 简体中文
+</p>
+
+<p align="center">
+  <a href="https://github.com/yaogdu/skill-hub/stargazers"><img src="https://img.shields.io/github/stars/yaogdu/skill-hub?style=social" alt="GitHub Stars"></a>
+  &nbsp;
+  <a href="https://discord.gg/HTYNjF2y2t"><img src="https://img.shields.io/discord/1435836734666707190?label=Discord&logo=discord&logoColor=white&color=5865F2" alt="Discord"></a>
+  &nbsp;
+  <a href="https://github.com/yaogdu/skill-hub/releases"><img src="https://img.shields.io/github/v/release/yaogdu/skill-hub?label=Release" alt="Release"></a>
+  &nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-green.svg" alt="License"></a>
+  &nbsp;
+  <a href="https://golang.org/doc/install"><img src="https://img.shields.io/badge/Go-1.25+-blue.svg" alt="Go Version"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/yaogdu/skill-hub">GitHub</a> · <a href="https://github.com/yaogdu/skill-hub/releases">Releases</a> · <a href="#quick-start-zh">快速开始</a> · <a href="#documentation-map-zh">文档导航</a> · <a href="./README.md">English README</a> · <a href="https://discord.gg/HTYNjF2y2t">Discord</a>
+</p>
 
 `skill-hub` 是一个面向 MCP Server、AI Agent、Skill、Prompt 的统一注册中心与分发中心，重点服务于团队内部沉淀、私有化部署、统一治理和标准化消费。
 
@@ -149,6 +176,7 @@ CLI 和 npm wrapper 都支持通过环境变量读取 API Key。
 
 ---
 
+<a id="quick-start-zh"></a>
 ## 快速开始
 
 ### 前置依赖
@@ -294,6 +322,7 @@ npx @yaogdu-skill-hub/shub add arch/java-analyzer --fallback-source github-main
 
 ---
 
+<a id="documentation-map-zh"></a>
 ## 文档导航
 
 - [`README.md`](./README.md)：英文版总览

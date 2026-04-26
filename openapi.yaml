@@ -312,6 +312,313 @@ paths:
                         application/problem+json:
                             schema:
                                 $ref: '#/components/schemas/ErrorModel'
+    /v0/assets:
+        get:
+            tags:
+                - assets
+            summary: List SHUB assets
+            description: Get a paginated list of SHUB-compatible assets from the registry compatibility layer
+            operationId: list-assets-v0
+            parameters:
+                - name: cursor
+                  in: query
+                  description: Pagination cursor
+                  explode: false
+                  schema:
+                    type: string
+                    description: Pagination cursor
+                    examples:
+                        - asset-cursor-123
+                  example: asset-cursor-123
+                - name: limit
+                  in: query
+                  description: Number of items per page
+                  explode: false
+                  schema:
+                    type: integer
+                    description: Number of items per page
+                    format: int64
+                    default: 30
+                    examples:
+                        - 50
+                    minimum: 1
+                    maximum: 100
+                  example: 50
+                - name: updated_since
+                  in: query
+                  description: Filter assets updated since timestamp (RFC3339 datetime)
+                  explode: false
+                  schema:
+                    type: string
+                    description: Filter assets updated since timestamp (RFC3339 datetime)
+                    examples:
+                        - "2025-08-07T13:15:04.280Z"
+                  example: "2025-08-07T13:15:04.280Z"
+                - name: search
+                  in: query
+                  description: Search assets by id, name, or description
+                  explode: false
+                  schema:
+                    type: string
+                    description: Search assets by id, name, or description
+                    examples:
+                        - java
+                  example: java
+                - name: version
+                  in: query
+                  description: Filter by version ('latest' for latest version, or an exact version like '1.2.3')
+                  explode: false
+                  schema:
+                    type: string
+                    description: Filter by version ('latest' for latest version, or an exact version like '1.2.3')
+                    examples:
+                        - latest
+                  example: latest
+                - name: category
+                  in: query
+                  description: Filter by asset category
+                  explode: false
+                  schema:
+                    type: string
+                    description: Filter by asset category
+                    examples:
+                        - prompt
+                    enum:
+                        - prompt
+                        - agent
+                        - mcp
+                  example: prompt
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssetListResponse'
+                default:
+                    description: Error
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorModel'
+        post:
+            tags:
+                - assets
+            summary: Create or publish asset
+            description: Create a new SHUB asset version in the registry compatibility layer.
+            operationId: create-asset-v0
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AssetPublishRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssetResponse'
+                default:
+                    description: Error
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorModel'
+    /v0/assets/{assetID}:
+        get:
+            tags:
+                - assets
+            summary: Get latest asset version
+            description: Get detailed information about the latest version of an asset
+            operationId: get-asset-latest-v0
+            parameters:
+                - name: assetID
+                  in: path
+                  description: URL-encoded asset id
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset id
+                    examples:
+                        - arch%2Fjava-analyzer
+                  example: arch%2Fjava-analyzer
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssetResponse'
+                default:
+                    description: Error
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorModel'
+    /v0/assets/{assetID}/versions:
+        get:
+            tags:
+                - assets
+            summary: Get all versions of an asset
+            description: Get all available versions for a specific asset id
+            operationId: get-asset-versions-v0
+            parameters:
+                - name: assetID
+                  in: path
+                  description: URL-encoded asset id
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset id
+                    examples:
+                        - arch%2Fjava-analyzer
+                  example: arch%2Fjava-analyzer
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssetListResponse'
+                default:
+                    description: Error
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorModel'
+    /v0/assets/{assetID}/versions/{version}:
+        get:
+            tags:
+                - assets
+            summary: Get specific asset version
+            description: Get detailed information about a specific asset version. Use version 'latest' to fetch the latest version.
+            operationId: get-asset-version-v0
+            parameters:
+                - name: assetID
+                  in: path
+                  description: URL-encoded asset id
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset id
+                    examples:
+                        - arch%2Fjava-analyzer
+                  example: arch%2Fjava-analyzer
+                - name: version
+                  in: path
+                  description: URL-encoded asset version
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset version
+                    examples:
+                        - 1.2.0
+                  example: 1.2.0
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssetResponse'
+                default:
+                    description: Error
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorModel'
+    /v0/assets/{assetID}/versions/{version}/package:
+        get:
+            tags:
+                - assets
+            summary: Download a published SHUB asset package
+            description: Stream the package archive for a specific SHUB asset version hosted by the registry.
+            operationId: get-asset-package-version-v0
+            parameters:
+                - name: assetID
+                  in: path
+                  description: URL-encoded asset id
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset id
+                    examples:
+                        - arch%2Fjava-analyzer
+                  example: arch%2Fjava-analyzer
+                - name: version
+                  in: path
+                  description: URL-encoded asset version
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset version
+                    examples:
+                        - 1.2.0
+                  example: 1.2.0
+            responses:
+                "200":
+                    description: OK
+                default:
+                    description: Error
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorModel'
+        put:
+            tags:
+                - assets
+            summary: Upload a SHUB asset package blob
+            description: Upload a packaged SHUB asset archive for registry-hosted distribution.
+            operationId: upload-asset-package-v0
+            parameters:
+                - name: assetID
+                  in: path
+                  description: URL-encoded asset id
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset id
+                    examples:
+                        - arch%2Fjava-analyzer
+                  example: arch%2Fjava-analyzer
+                - name: version
+                  in: path
+                  description: URL-encoded asset version
+                  required: true
+                  schema:
+                    type: string
+                    description: URL-encoded asset version
+                    examples:
+                        - 1.2.0
+                  example: 1.2.0
+                - name: Content-Type
+                  in: header
+                  description: Package content type
+                  schema:
+                    type: string
+                    description: Package content type
+            requestBody:
+                content:
+                    application/gzip:
+                        schema:
+                            type: string
+                            format: binary
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AssetPackageResponse'
+                default:
+                    description: Error
+                    content:
+                        application/problem+json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorModel'
     /v0/deployments:
         get:
             tags:
@@ -1759,6 +2066,288 @@ components:
                         $ref: '#/components/schemas/Input'
             required:
                 - type
+        Asset:
+            type: object
+            additionalProperties: false
+            properties:
+                allowedTools:
+                    type: array
+                    items:
+                        type: string
+                category:
+                    type: string
+                description:
+                    type: string
+                id:
+                    type: string
+                manifest:
+                    $ref: '#/components/schemas/AssetManifest'
+                name:
+                    type: string
+                source:
+                    $ref: '#/components/schemas/AssetSource'
+                sourceSkill:
+                    $ref: '#/components/schemas/AssetSourceSkill'
+                status:
+                    type: string
+                version:
+                    type: string
+            required:
+                - id
+                - name
+                - description
+                - version
+                - category
+                - sourceSkill
+                - manifest
+        AssetCommand:
+            type: object
+            additionalProperties: false
+            properties:
+                run:
+                    type: array
+                    items:
+                        type: string
+            required:
+                - run
+        AssetEntry:
+            type: object
+            additionalProperties: false
+            properties:
+                args:
+                    type: array
+                    items:
+                        type: string
+                kind:
+                    type: string
+                path:
+                    type: string
+            required:
+                - kind
+                - path
+        AssetExport:
+            type: object
+            additionalProperties: false
+            properties:
+                mode:
+                    type: string
+                source:
+                    type: string
+                target:
+                    type: string
+                targetPath:
+                    type: string
+            required:
+                - target
+                - mode
+                - source
+        AssetHooks:
+            type: object
+            additionalProperties: false
+            properties:
+                post_install:
+                    $ref: '#/components/schemas/AssetCommand'
+                post_pull:
+                    $ref: '#/components/schemas/AssetCommand'
+        AssetInstall:
+            type: object
+            additionalProperties: false
+            properties:
+                lockfile:
+                    type: string
+                path:
+                    type: string
+                strategy:
+                    type: string
+            required:
+                - strategy
+        AssetListResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                assets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssetResponse'
+                metadata:
+                    $ref: '#/components/schemas/AssetMetadata'
+            required:
+                - assets
+                - metadata
+        AssetManifest:
+            type: object
+            additionalProperties: false
+            properties:
+                allowedTools:
+                    type: array
+                    items:
+                        type: string
+                category:
+                    type: string
+                description:
+                    type: string
+                entry:
+                    $ref: '#/components/schemas/AssetEntry'
+                exports:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssetExport'
+                hooks:
+                    $ref: '#/components/schemas/AssetHooks'
+                id:
+                    type: string
+                metadata:
+                    type: object
+                    additionalProperties: {}
+                name:
+                    type: string
+                runtime:
+                    $ref: '#/components/schemas/AssetRuntime'
+                schemaVersion:
+                    type: string
+                sourceSkill:
+                    $ref: '#/components/schemas/AssetSourceSkill'
+                version:
+                    type: string
+            required:
+                - schemaVersion
+                - id
+                - category
+                - name
+                - description
+                - version
+                - sourceSkill
+                - entry
+                - runtime
+        AssetMetadata:
+            type: object
+            additionalProperties: false
+            properties:
+                count:
+                    type: integer
+                    format: int64
+                nextCursor:
+                    type: string
+            required:
+                - count
+        AssetPackage:
+            type: object
+            additionalProperties: false
+            properties:
+                assetId:
+                    type: string
+                contentType:
+                    type: string
+                sha256:
+                    type: string
+                sizeBytes:
+                    type: integer
+                    format: int64
+                uploadedAt:
+                    type: string
+                    format: date-time
+                version:
+                    type: string
+            required:
+                - assetId
+                - version
+                - contentType
+                - sizeBytes
+                - sha256
+                - uploadedAt
+        AssetPackageResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                downloadUrl:
+                    type: string
+                package:
+                    $ref: '#/components/schemas/AssetPackage'
+            required:
+                - package
+        AssetPublishRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                manifest:
+                    $ref: '#/components/schemas/AssetManifest'
+                source:
+                    $ref: '#/components/schemas/AssetSource'
+            required:
+                - manifest
+        AssetRegistryExtensions:
+            type: object
+            additionalProperties: false
+            properties:
+                isLatest:
+                    type: boolean
+                publishedAt:
+                    type: string
+                    format: date-time
+                status:
+                    type: string
+                updatedAt:
+                    type: string
+                    format: date-time
+            required:
+                - status
+                - publishedAt
+                - updatedAt
+                - isLatest
+        AssetResponse:
+            type: object
+            additionalProperties: false
+            properties:
+                _meta:
+                    $ref: '#/components/schemas/AssetResponseMeta'
+                asset:
+                    $ref: '#/components/schemas/Asset'
+            required:
+                - asset
+                - _meta
+        AssetResponseMeta:
+            type: object
+            additionalProperties: false
+            properties:
+                io.modelcontextprotocol.registry/official:
+                    $ref: '#/components/schemas/AssetRegistryExtensions'
+        AssetRuntime:
+            type: object
+            additionalProperties: false
+            properties:
+                install:
+                    $ref: '#/components/schemas/AssetInstall'
+                type:
+                    type: string
+                version:
+                    type: string
+            required:
+                - type
+        AssetSource:
+            type: object
+            additionalProperties: false
+            properties:
+                commit:
+                    type: string
+                packageRef:
+                    type: string
+                packageType:
+                    type: string
+                repositoryUrl:
+                    type: string
+        AssetSourceSkill:
+            type: object
+            additionalProperties: false
+            properties:
+                body:
+                    type: string
+                bodyFormat:
+                    type: string
+                path:
+                    type: string
+            required:
+                - path
+                - bodyFormat
         CreateProviderInput:
             type: object
             additionalProperties: false
@@ -2629,6 +3218,8 @@ components:
                         $ref: '#/components/schemas/SkillRemoteInfo'
                 repository:
                     $ref: '#/components/schemas/SkillRepository'
+                shub:
+                    $ref: '#/components/schemas/SkillSHUBMetadata'
                 status:
                     type: string
                 title:
@@ -2761,6 +3352,20 @@ components:
             properties:
                 io.modelcontextprotocol.registry/official:
                     $ref: '#/components/schemas/SkillRegistryExtensions'
+        SkillSHUBMetadata:
+            type: object
+            additionalProperties: false
+            properties:
+                assetId:
+                    type: string
+                category:
+                    type: string
+                manifest:
+                    $ref: '#/components/schemas/AssetManifest'
+                schemaVersion:
+                    type: string
+                source:
+                    $ref: '#/components/schemas/AssetSource'
         Transport:
             type: object
             additionalProperties: false
