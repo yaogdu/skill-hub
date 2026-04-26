@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useState } from "react"
 import { ServerResponse } from "@/lib/admin-api"
 import { Badge } from "@/components/ui/badge"
@@ -108,7 +109,14 @@ export function ServerDetail({ server, onServerCopied }: ServerDetailProps) {
           {/* Header */}
           <div className="flex items-start gap-4">
             {icon && (
-              <img src={icon.src} alt="" className="w-12 h-12 rounded flex-shrink-0" />
+              <Image
+                src={icon.src}
+                alt={`${serverData.title || serverData.name} icon`}
+                width={48}
+                height={48}
+                unoptimized
+                className="w-12 h-12 rounded flex-shrink-0"
+              />
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">

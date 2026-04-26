@@ -2,6 +2,16 @@
 const nextConfig = {
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
+    ],
   },
   async rewrites() {
     return [
@@ -35,4 +45,3 @@ if (process.env.NEXT_BUILD_EXPORT === 'true') {
 }
 
 module.exports = nextConfig
-

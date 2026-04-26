@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -80,6 +80,142 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: "prompts", label: "Prompts", icon: <FileText className="h-3.5 w-3.5" /> },
 ]
 
+function getStars(server: ServerResponse): number {
+  const publisherProvided = server.server._meta?.['io.modelcontextprotocol.registry/publisher-provided'] as Record<string, unknown> | undefined
+  const metadata = publisherProvided?.['aregistry.ai/metadata'] as Record<string, unknown> | undefined
+  return (metadata?.stars as number) ?? 0
+}
+
+function getPublishedDate(server: ServerResponse): Date | null {
+  const publishedAt = server._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
+  if (!publishedAt) return null
+  try {
+    return new Date(publishedAt)
+  } catch {
+    return null
+  }
+}
+
+function groupServersByName(servers: ServerResponse[]): GroupedServer[] {
+  const grouped = new Map<string, ServerResponse[]>()
+
+  servers.forEach((server) => {
+    const name = server.server.name
+    if (!grouped.has(name)) {
+      grouped.set(name, [])
+    }
+    grouped.get(name)!.push(server)
+  })
+
+  return Array.from(grouped.entries()).map(([, versions]) => {
+    const sortedVersions = [...versions].sort((a, b) => {
+      const dateA = getPublishedDate(a)
+      const dateB = getPublishedDate(b)
+      if (dateA && dateB) {
+        return dateB.getTime() - dateA.getTime()
+      }
+      return b.server.version.localeCompare(a.server.version)
+    })
+
+    const latestVersion = sortedVersions[0]
+    return {
+      ...latestVersion,
+      versionCount: versions.length,
+      allVersions: sortedVersions,
+    }
+  })
+}
+
+function groupSkillsByName(skills: SkillResponse[]): GroupedSkill[] {
+  const grouped = new Map<string, SkillResponse[]>()
+
+  skills.forEach((skill) => {
+    const name = skill.skill.name
+    if (!grouped.has(name)) {
+      grouped.set(name, [])
+    }
+    grouped.get(name)!.push(skill)
+  })
+
+  return Array.from(grouped.entries()).map(([, versions]) => {
+    const sortedVersions = [...versions].sort((a, b) => {
+      const dateA = a._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
+      const dateB = b._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
+      if (dateA && dateB) {
+        return new Date(dateB).getTime() - new Date(dateA).getTime()
+      }
+      return (b.skill.version || '').localeCompare(a.skill.version || '')
+    })
+
+    const latestVersion = sortedVersions[0]
+    return {
+      ...latestVersion,
+      versionCount: versions.length,
+      allVersions: sortedVersions,
+    }
+  })
+}
+
+function groupAgentsByName(agents: AgentResponse[]): GroupedAgent[] {
+  const grouped = new Map<string, AgentResponse[]>()
+
+  agents.forEach((agent) => {
+    const name = agent.agent.name
+    if (!grouped.has(name)) {
+      grouped.set(name, [])
+    }
+    grouped.get(name)!.push(agent)
+  })
+
+  return Array.from(grouped.entries()).map(([, versions]) => {
+    const sortedVersions = [...versions].sort((a, b) => {
+      const dateA = a._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
+      const dateB = b._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
+      if (dateA && dateB) {
+        return new Date(dateB).getTime() - new Date(dateA).getTime()
+      }
+      return (b.agent.version || '').localeCompare(a.agent.version || '')
+    })
+
+    const latestVersion = sortedVersions[0]
+    return {
+      ...latestVersion,
+      versionCount: versions.length,
+      allVersions: sortedVersions,
+    }
+  })
+}
+
+function groupPromptsByName(prompts: PromptResponse[]): GroupedPrompt[] {
+  const grouped = new Map<string, PromptResponse[]>()
+
+  prompts.forEach((prompt) => {
+    const name = prompt.prompt.name
+    if (!grouped.has(name)) {
+      grouped.set(name, [])
+    }
+    grouped.get(name)!.push(prompt)
+  })
+
+  return Array.from(grouped.entries()).map(([, versions]) => {
+    const sortedVersions = [...versions].sort((a, b) => {
+      const dateA = a._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
+      const dateB = b._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
+      if (dateA && dateB) {
+        return new Date(dateB).getTime() - new Date(dateA).getTime()
+      }
+      return (b.prompt.version || '').localeCompare(a.prompt.version || '')
+    })
+
+    const latestVersion = sortedVersions[0]
+    return {
+      ...latestVersion,
+      versionCount: versions.length,
+      allVersions: sortedVersions,
+    }
+  })
+}
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("servers")
   const [servers, setServers] = useState<ServerResponse[]>([])
@@ -109,143 +245,7 @@ export default function AdminPage() {
   const [deployServerTarget, setDeployServerTarget] = useState<ServerResponse | null>(null)
   const [deployAgentTarget, setDeployAgentTarget] = useState<AgentResponse | null>(null)
 
-  const getStars = (server: ServerResponse): number => {
-    const publisherProvided = server.server._meta?.['io.modelcontextprotocol.registry/publisher-provided'] as Record<string, unknown> | undefined
-    const metadata = publisherProvided?.['aregistry.ai/metadata'] as Record<string, unknown> | undefined
-    return (metadata?.stars as number) ?? 0
-  }
-
-  const getPublishedDate = (server: ServerResponse): Date | null => {
-    const publishedAt = server._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
-    if (!publishedAt) return null
-    try {
-      return new Date(publishedAt)
-    } catch {
-      return null
-    }
-  }
-
-  const groupServersByName = (servers: ServerResponse[]): GroupedServer[] => {
-    const grouped = new Map<string, ServerResponse[]>()
-
-    servers.forEach((server) => {
-      const name = server.server.name
-      if (!grouped.has(name)) {
-        grouped.set(name, [])
-      }
-      grouped.get(name)!.push(server)
-    })
-
-    return Array.from(grouped.entries()).map(([, versions]) => {
-      const sortedVersions = [...versions].sort((a, b) => {
-        const dateA = getPublishedDate(a)
-        const dateB = getPublishedDate(b)
-        if (dateA && dateB) {
-          return dateB.getTime() - dateA.getTime()
-        }
-        return b.server.version.localeCompare(a.server.version)
-      })
-
-      const latestVersion = sortedVersions[0]
-      return {
-        ...latestVersion,
-        versionCount: versions.length,
-        allVersions: sortedVersions,
-      }
-    })
-  }
-
-  const groupSkillsByName = (skills: SkillResponse[]): GroupedSkill[] => {
-    const grouped = new Map<string, SkillResponse[]>()
-
-    skills.forEach((skill) => {
-      const name = skill.skill.name
-      if (!grouped.has(name)) {
-        grouped.set(name, [])
-      }
-      grouped.get(name)!.push(skill)
-    })
-
-    return Array.from(grouped.entries()).map(([, versions]) => {
-      const sortedVersions = [...versions].sort((a, b) => {
-        const dateA = a._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
-        const dateB = b._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
-        if (dateA && dateB) {
-          return new Date(dateB).getTime() - new Date(dateA).getTime()
-        }
-        return (b.skill.version || '').localeCompare(a.skill.version || '')
-      })
-
-      const latestVersion = sortedVersions[0]
-      return {
-        ...latestVersion,
-        versionCount: versions.length,
-        allVersions: sortedVersions,
-      }
-    })
-  }
-
-  const groupAgentsByName = (agents: AgentResponse[]): GroupedAgent[] => {
-    const grouped = new Map<string, AgentResponse[]>()
-
-    agents.forEach((agent) => {
-      const name = agent.agent.name
-      if (!grouped.has(name)) {
-        grouped.set(name, [])
-      }
-      grouped.get(name)!.push(agent)
-    })
-
-    return Array.from(grouped.entries()).map(([, versions]) => {
-      const sortedVersions = [...versions].sort((a, b) => {
-        const dateA = a._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
-        const dateB = b._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
-        if (dateA && dateB) {
-          return new Date(dateB).getTime() - new Date(dateA).getTime()
-        }
-        return (b.agent.version || '').localeCompare(a.agent.version || '')
-      })
-
-      const latestVersion = sortedVersions[0]
-      return {
-        ...latestVersion,
-        versionCount: versions.length,
-        allVersions: sortedVersions,
-      }
-    })
-  }
-
-  const groupPromptsByName = (prompts: PromptResponse[]): GroupedPrompt[] => {
-    const grouped = new Map<string, PromptResponse[]>()
-
-    prompts.forEach((prompt) => {
-      const name = prompt.prompt.name
-      if (!grouped.has(name)) {
-        grouped.set(name, [])
-      }
-      grouped.get(name)!.push(prompt)
-    })
-
-    return Array.from(grouped.entries()).map(([, versions]) => {
-      const sortedVersions = [...versions].sort((a, b) => {
-        const dateA = a._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
-        const dateB = b._meta?.['io.modelcontextprotocol.registry/official']?.publishedAt
-        if (dateA && dateB) {
-          return new Date(dateB).getTime() - new Date(dateA).getTime()
-        }
-        return (b.prompt.version || '').localeCompare(a.prompt.version || '')
-      })
-
-      const latestVersion = sortedVersions[0]
-      return {
-        ...latestVersion,
-        versionCount: versions.length,
-        allVersions: sortedVersions,
-      }
-    })
-  }
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -308,9 +308,11 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    void fetchData()
+  }, [fetchData])
 
   const isSheetOpen = !!(selectedServer || selectedSkill || selectedAgent || selectedPrompt)
   const closeSheet = () => {

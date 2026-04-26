@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="img/agentregistry-logo.png">
-    <source media="(prefers-color-scheme: light)" srcset="img/agentgateway-logo-light.png">
-    <img src="img/agentregistry-logo.png" alt="skill-hub" width="500"/>
+    <source media="(prefers-color-scheme: dark)" srcset="img/skill-hub-logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="img/skill-hub-logo-light.svg">
+    <img src="img/skill-hub-logo-light.svg" alt="skill-hub" width="500"/>
   </picture>
 </p>
 

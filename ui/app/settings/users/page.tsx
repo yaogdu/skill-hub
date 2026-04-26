@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, useCallback, useEffect, useState } from "react"
 import { ShieldAlert, UserPlus } from "lucide-react"
 import { useSettingsContext } from "@/components/settings-shell"
 import { Badge } from "@/components/ui/badge"
@@ -29,7 +29,7 @@ export default function UsersSettingsPage() {
   const [newUsername, setNewUsername] = useState("")
   const [newPassword, setNewPassword] = useState("")
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     if (!isAdmin) {
       setLoading(false)
       return
@@ -49,11 +49,11 @@ export default function UsersSettingsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [isAdmin])
 
   useEffect(() => {
     void refresh()
-  }, [isAdmin])
+  }, [refresh])
 
   async function handleCreateUser(event: FormEvent) {
     event.preventDefault()

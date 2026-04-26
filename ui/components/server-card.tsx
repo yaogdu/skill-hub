@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { ServerResponse } from "@/lib/admin-api"
 import { Button } from "@/components/ui/button"
 import {
@@ -52,7 +53,14 @@ export function ServerCard({ server, onDelete, onDeploy, showDelete = false, sho
         onClick={() => onClick?.()}
       >
         {icon ? (
-          <img src={icon.src} alt="" className="w-10 h-10 rounded flex-shrink-0 mt-0.5" />
+          <Image
+            src={icon.src}
+            alt={`${serverData.title || serverData.name} icon`}
+            width={40}
+            height={40}
+            unoptimized
+            className="w-10 h-10 rounded flex-shrink-0 mt-0.5"
+          />
         ) : (
           <div className="w-10 h-10 rounded bg-primary/8 flex items-center justify-center flex-shrink-0 mt-0.5">
             <span className="text-xs font-semibold text-primary uppercase">
