@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ApplyData, ApplyErrors, ApplyResponses, CancelDeploymentData, CancelDeploymentErrors, CancelDeploymentResponses, CreateAgentV0Data, CreateAgentV0Errors, CreateAgentV0Responses, CreateAssetV0Data, CreateAssetV0Errors, CreateAssetV0Responses, CreatePromptV0Data, CreatePromptV0Errors, CreatePromptV0Responses, CreateProviderData, CreateProviderErrors, CreateProviderResponses, CreateServerV0Data, CreateServerV0Errors, CreateServerV0Responses, CreateSkillV0Data, CreateSkillV0Errors, CreateSkillV0Responses, DeleteAgentVersionV0Data, DeleteAgentVersionV0Errors, DeleteAgentVersionV0Responses, DeleteApplyData, DeleteApplyErrors, DeleteApplyResponses, DeletePromptVersionV0Data, DeletePromptVersionV0Errors, DeletePromptVersionV0Responses, DeleteProviderData, DeleteProviderErrors, DeleteProviderResponses, DeleteServerVersionV0Data, DeleteServerVersionV0Errors, DeleteServerVersionV0Responses, DeleteSkillVersionV0Data, DeleteSkillVersionV0Errors, DeleteSkillVersionV0Responses, DeployServerData, DeployServerErrors, DeployServerResponses, EditServerV0Data, EditServerV0Errors, EditServerV0Responses, GetAgentVersionsV0Data, GetAgentVersionsV0Errors, GetAgentVersionsV0Responses, GetAgentVersionV0Data, GetAgentVersionV0Errors, GetAgentVersionV0Responses, GetAssetLatestV0Data, GetAssetLatestV0Errors, GetAssetLatestV0Responses, GetAssetPackageVersionV0Data, GetAssetPackageVersionV0Errors, GetAssetPackageVersionV0Responses, GetAssetVersionsV0Data, GetAssetVersionsV0Errors, GetAssetVersionsV0Responses, GetAssetVersionV0Data, GetAssetVersionV0Errors, GetAssetVersionV0Responses, GetDeploymentData, GetDeploymentErrors, GetDeploymentLogsData, GetDeploymentLogsErrors, GetDeploymentLogsResponses, GetDeploymentResponses, GetHealthV0Data, GetHealthV0Errors, GetHealthV0Responses, GetPromptVersionsV0Data, GetPromptVersionsV0Errors, GetPromptVersionsV0Responses, GetPromptVersionV0Data, GetPromptVersionV0Errors, GetPromptVersionV0Responses, GetProviderData, GetProviderErrors, GetProviderResponses, GetServerReadmeV0Data, GetServerReadmeV0Errors, GetServerReadmeV0Responses, GetServerVersionReadmeV0Data, GetServerVersionReadmeV0Errors, GetServerVersionReadmeV0Responses, GetServerVersionsV0Data, GetServerVersionsV0Errors, GetServerVersionsV0Responses, GetServerVersionV0Data, GetServerVersionV0Errors, GetServerVersionV0Responses, GetSkillVersionsV0Data, GetSkillVersionsV0Errors, GetSkillVersionsV0Responses, GetSkillVersionV0Data, GetSkillVersionV0Errors, GetSkillVersionV0Responses, GetVersionV0Data, GetVersionV0Errors, GetVersionV0Responses, ListAgentsV0Data, ListAgentsV0Errors, ListAgentsV0Responses, ListAssetsV0Data, ListAssetsV0Errors, ListAssetsV0Responses, ListDeploymentsData, ListDeploymentsErrors, ListDeploymentsResponses, ListPromptsV0Data, ListPromptsV0Errors, ListPromptsV0Responses, ListProvidersData, ListProvidersErrors, ListProvidersResponses, ListServersV0Data, ListServersV0Errors, ListServersV0Responses, ListSkillsV0Data, ListSkillsV0Errors, ListSkillsV0Responses, PingV0Data, PingV0Errors, PingV0Responses, RemoveDeploymentData, RemoveDeploymentErrors, RemoveDeploymentResponses, UploadAssetPackageV0Data, UploadAssetPackageV0Errors, UploadAssetPackageV0Responses } from './types.gen';
+import type { ApplyData, ApplyErrors, ApplyResponses, CreateAgentV0Data, CreateAgentV0Errors, CreateAgentV0Responses, CreateAssetV0Data, CreateAssetV0Errors, CreateAssetV0Responses, CreatePromptV0Data, CreatePromptV0Errors, CreatePromptV0Responses, CreateServerV0Data, CreateServerV0Errors, CreateServerV0Responses, CreateSkillV0Data, CreateSkillV0Errors, CreateSkillV0Responses, DeleteAgentVersionV0Data, DeleteAgentVersionV0Errors, DeleteAgentVersionV0Responses, DeleteApplyData, DeleteApplyErrors, DeleteApplyResponses, DeletePromptVersionV0Data, DeletePromptVersionV0Errors, DeletePromptVersionV0Responses, DeleteServerVersionV0Data, DeleteServerVersionV0Errors, DeleteServerVersionV0Responses, DeleteSkillVersionV0Data, DeleteSkillVersionV0Errors, DeleteSkillVersionV0Responses, EditServerV0Data, EditServerV0Errors, EditServerV0Responses, GetAgentVersionsV0Data, GetAgentVersionsV0Errors, GetAgentVersionsV0Responses, GetAgentVersionV0Data, GetAgentVersionV0Errors, GetAgentVersionV0Responses, GetAssetLatestV0Data, GetAssetLatestV0Errors, GetAssetLatestV0Responses, GetAssetPackageVersionV0Data, GetAssetPackageVersionV0Errors, GetAssetPackageVersionV0Responses, GetAssetVersionsV0Data, GetAssetVersionsV0Errors, GetAssetVersionsV0Responses, GetAssetVersionV0Data, GetAssetVersionV0Errors, GetAssetVersionV0Responses, GetHealthV0Data, GetHealthV0Errors, GetHealthV0Responses, GetPromptVersionsV0Data, GetPromptVersionsV0Errors, GetPromptVersionsV0Responses, GetPromptVersionV0Data, GetPromptVersionV0Errors, GetPromptVersionV0Responses, GetServerReadmeV0Data, GetServerReadmeV0Errors, GetServerReadmeV0Responses, GetServerVersionReadmeV0Data, GetServerVersionReadmeV0Errors, GetServerVersionReadmeV0Responses, GetServerVersionsV0Data, GetServerVersionsV0Errors, GetServerVersionsV0Responses, GetServerVersionV0Data, GetServerVersionV0Errors, GetServerVersionV0Responses, GetSkillVersionsV0Data, GetSkillVersionsV0Errors, GetSkillVersionsV0Responses, GetSkillVersionV0Data, GetSkillVersionV0Errors, GetSkillVersionV0Responses, GetVersionV0Data, GetVersionV0Errors, GetVersionV0Responses, ListAgentsV0Data, ListAgentsV0Errors, ListAgentsV0Responses, ListAssetsV0Data, ListAssetsV0Errors, ListAssetsV0Responses, ListPromptsV0Data, ListPromptsV0Errors, ListPromptsV0Responses, ListServersV0Data, ListServersV0Errors, ListServersV0Responses, ListSkillsV0Data, ListSkillsV0Errors, ListSkillsV0Responses, PingV0Data, PingV0Errors, PingV0Responses, UploadAssetPackageV0Data, UploadAssetPackageV0Errors, UploadAssetPackageV0Responses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -151,55 +151,6 @@ export const uploadAssetPackageV0 = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
- * List deployed resources
- *
- * Retrieve all deployed resources (MCP servers, agents) with their configurations. Optionally filter by resource type.
- */
-export const listDeployments = <ThrowOnError extends boolean = false>(options?: Options<ListDeploymentsData, ThrowOnError>) => (options?.client ?? client).get<ListDeploymentsResponses, ListDeploymentsErrors, ThrowOnError>({ url: '/v0/deployments', ...options });
-
-/**
- * Deploy a resource
- *
- * Deploy a resource (MCP server or agent) with deployment env vars (`env`) and optional provider-specific settings (`providerConfig`). Defaults to MCP server if resourceType is not specified.
- */
-export const deployServer = <ThrowOnError extends boolean = false>(options: Options<DeployServerData, ThrowOnError>) => (options.client ?? client).post<DeployServerResponses, DeployServerErrors, ThrowOnError>({
-    url: '/v0/deployments',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Remove a deployed resource
- *
- * Remove a deployment by ID
- */
-export const removeDeployment = <ThrowOnError extends boolean = false>(options: Options<RemoveDeploymentData, ThrowOnError>) => (options.client ?? client).delete<RemoveDeploymentResponses, RemoveDeploymentErrors, ThrowOnError>({ url: '/v0/deployments/{id}', ...options });
-
-/**
- * Get deployment details
- *
- * Retrieve details for a specific deployment by ID
- */
-export const getDeployment = <ThrowOnError extends boolean = false>(options: Options<GetDeploymentData, ThrowOnError>) => (options.client ?? client).get<GetDeploymentResponses, GetDeploymentErrors, ThrowOnError>({ url: '/v0/deployments/{id}', ...options });
-
-/**
- * Cancel deployment
- *
- * Cancel a deployment when supported by the provider
- */
-export const cancelDeployment = <ThrowOnError extends boolean = false>(options: Options<CancelDeploymentData, ThrowOnError>) => (options.client ?? client).post<CancelDeploymentResponses, CancelDeploymentErrors, ThrowOnError>({ url: '/v0/deployments/{id}/cancel', ...options });
-
-/**
- * Get deployment logs
- *
- * Get logs for async deployments when supported by the provider
- */
-export const getDeploymentLogs = <ThrowOnError extends boolean = false>(options: Options<GetDeploymentLogsData, ThrowOnError>) => (options.client ?? client).get<GetDeploymentLogsResponses, GetDeploymentLogsErrors, ThrowOnError>({ url: '/v0/deployments/{id}/logs', ...options });
-
-/**
  * Health check
  *
  * Check the health status of the API
@@ -254,41 +205,6 @@ export const deletePromptVersionV0 = <ThrowOnError extends boolean = false>(opti
  * Get detailed information about a specific version of a prompt. Use the special version 'latest' to get the latest version.
  */
 export const getPromptVersionV0 = <ThrowOnError extends boolean = false>(options: Options<GetPromptVersionV0Data, ThrowOnError>) => (options.client ?? client).get<GetPromptVersionV0Responses, GetPromptVersionV0Errors, ThrowOnError>({ url: '/v0/prompts/{promptName}/versions/{version}', ...options });
-
-/**
- * List providers
- *
- * List configured deployment target providers.
- */
-export const listProviders = <ThrowOnError extends boolean = false>(options?: Options<ListProvidersData, ThrowOnError>) => (options?.client ?? client).get<ListProvidersResponses, ListProvidersErrors, ThrowOnError>({ url: '/v0/providers', ...options });
-
-/**
- * Create provider
- *
- * Create a deployment target provider for a specific platform type.
- */
-export const createProvider = <ThrowOnError extends boolean = false>(options: Options<CreateProviderData, ThrowOnError>) => (options.client ?? client).post<CreateProviderResponses, CreateProviderErrors, ThrowOnError>({
-    url: '/v0/providers',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Delete provider
- *
- * Delete a provider by ID.
- */
-export const deleteProvider = <ThrowOnError extends boolean = false>(options: Options<DeleteProviderData, ThrowOnError>) => (options.client ?? client).delete<DeleteProviderResponses, DeleteProviderErrors, ThrowOnError>({ url: '/v0/providers/{providerId}', ...options });
-
-/**
- * Get provider
- *
- * Get a provider by ID.
- */
-export const getProvider = <ThrowOnError extends boolean = false>(options: Options<GetProviderData, ThrowOnError>) => (options.client ?? client).get<GetProviderResponses, GetProviderErrors, ThrowOnError>({ url: '/v0/providers/{providerId}', ...options });
 
 /**
  * List MCP servers

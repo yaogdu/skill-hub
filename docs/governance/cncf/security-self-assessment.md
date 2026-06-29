@@ -55,21 +55,21 @@ This document provides a self-assessment of the agentregistry project following 
 
 ## Overview
 
-agentregistry is a centralized registry for securely curating, discovering, deploying, and managing agentic infrastructure including MCP (Model Context Protocol) servers, agents, and skills. It gives platform teams and developers one place to manage the agentic infrastructure their applications depend on.
+agentregistry is a centralized registry for securely curating, discovering, publishing, and managing agentic infrastructure including MCP (Model Context Protocol) servers, agents, and skills. It gives platform teams and developers one place to manage the agentic infrastructure their applications depend on.
 
 ### Background
 
-The rapid growth of AI agents, MCP servers, and skills has created a fragmented ecosystem with no standardized way to discover, curate, validate, or govern agentic infrastructure. Organizations face challenges such as no centralized source of truth for AI artifacts, lack of governance controls over which AI tools are approved for company-wide use, difficulty deploying and managing AI artifacts consistently across multiple environments, and absence of metadata enrichment, scoring, or validation pipelines for agentic components. agentregistry addresses these gaps by providing a centralized, secure registry where teams can publish, discover, curate, and deploy AI artifacts with confidence.
+The rapid growth of AI agents, MCP servers, and skills has created a fragmented ecosystem with no standardized way to discover, curate, validate, or govern agentic infrastructure. Organizations face challenges such as no centralized source of truth for AI artifacts, lack of governance controls over which AI tools are approved for company-wide use, difficulty versioning and distributing AI artifacts consistently across multiple environments, and absence of metadata enrichment, scoring, or validation pipelines for agentic components. agentregistry addresses these gaps by providing a centralized, secure registry where teams can publish, discover, curate, and consume AI artifacts with confidence.
 
 ### Actors
 
-**Registry Server**: The core Go service exposing the REST API for artifact management. Stores metadata in PostgreSQL with pgvector for semantic search. Handles authentication, authorization, artifact lifecycle, and deployment orchestration.
+**Registry Server**: The core Go service exposing the REST API for artifact management. Stores metadata in PostgreSQL with pgvector for semantic search. Handles authentication, authorization, artifact lifecycle, dependency metadata, and package distribution.
 
-**CLI (arctl)**: A Go-based command-line interface that communicates with the registry server over HTTP. Supports artifact discovery, publishing, deployment, and configuration of AI-powered IDEs. Manages local daemon lifecycle explicitly via `arctl daemon start`, `arctl daemon stop`, and `arctl daemon status`.
+**CLI (arctl)**: A Go-based command-line interface that communicates with the registry server over HTTP. Supports artifact discovery, publishing, dependency resolution, and configuration of AI-powered IDEs. Manages local daemon lifecycle explicitly via `arctl daemon start`, `arctl daemon stop`, and `arctl daemon status`.
 
 **Web UI**: A TypeScript/React (Next.js 14) frontend served by the registry server. Provides a visual interface for browsing, managing, and publishing artifacts. Accessible at port 12121.
 
-**Agentgateway**: An optional integration with [agentgateway](https://github.com/agentgateway/agentgateway) (Linux Foundation) that acts as a reverse proxy providing a unified MCP endpoint for all deployed servers and enforcing policy and observability.
+**Agentgateway**: A complementary Linux Foundation project that can be used by operators as a reverse proxy for MCP traffic. agentregistry does not configure or deploy agentgateway as part of its registry workflow.
 
 **PostgreSQL + pgvector**: The persistent storage backend for artifact metadata and vector embeddings that enable semantic discovery and search.
 
@@ -79,22 +79,22 @@ The rapid growth of AI agents, MCP servers, and skills has created a fragmented 
 
 **Artifact Discovery and Consumption**: Developers discover pre-approved artifacts through the CLI or web UI. Artifacts can be pulled, configured, and integrated directly into AI-powered IDEs (Claude Code, Cursor, VS Code).
 
-**Deployment to Kubernetes**: The registry server deploys MCP servers and agents to Kubernetes clusters using the kagent.dev CRDs. This involves creating and managing deployments, services, secrets, and configmaps. RBAC permissions are enforced through Kubernetes ClusterRoles or namespace-scoped Roles.
+**Artifact Publishing and Resolution**: The registry stores approved artifact metadata and package references, resolves fixed versions for local and CI/CD consumption, and exports configuration that downstream tools can use. Runtime deployment of MCP servers and agents is handled by external platforms.
 
-**API Authentication and Authorization**: The registry server authenticates API requests using JWT tokens signed with Ed25519 cryptography. Authorization is enforced per-request through a dedicated AuthzProvider interface with resource-pattern matching and action-based permissions (read, publish, edit, delete, deploy).
+**API Authentication and Authorization**: The registry server authenticates API requests using JWT tokens signed with Ed25519 cryptography. Authorization is enforced per-request through a dedicated AuthzProvider interface with resource-pattern matching and action-based permissions (read, publish, edit, delete).
 
 ### Goals
 
 - **Centralized Trusted Registry**: Provide a single source of truth for AI artifacts (MCP servers, agents, skills) that organizations can trust and govern.
 - **Governance and Curation**: Enable operators to control which artifacts are approved, scored, validated, and available to developers before consumption.
-- **Cloud-Native Deployment**: Deliver a Kubernetes-native deployment model via Helm charts with secure defaults, enabling registry operation on-premises, in the cloud, or at the edge.
-- **Secure Artifact Lifecycle**: Maintain end-to-end audit and control over artifact ingestion, curation, publishing, and deployment.
+- **Cloud-Native Registry Operation**: Deliver a Kubernetes-native installation model via Helm charts with secure defaults, enabling registry operation on-premises, in the cloud, or at the edge.
+- **Secure Artifact Lifecycle**: Maintain end-to-end audit and control over artifact ingestion, curation, publishing, dependency resolution, and consumption.
 
 ### Non-goals
 
-- **Direct Cluster Administration**: agentregistry does not replace Kubernetes RBAC or cluster security policies; it operates within existing security boundaries.
+- **Direct Cluster Administration**: agentregistry does not replace Kubernetes RBAC or cluster security policies; runtime platforms remain responsible for cluster-side execution and rollout.
 - **LLM Model Hosting**: agentregistry does not host or provide LLM models; it manages the infrastructure artifacts (MCP servers, agents, skills) that interact with models.
-- **Runtime Security Enforcement**: agentregistry is a registry and deployment tool, not a runtime security agent. Runtime policy enforcement is delegated to components like the agentgateway, service meshes, or Kubernetes network policies.
+- **Runtime Deployment and Security Enforcement**: agentregistry is a registry, not a runtime deployment platform or security agent. Runtime deployment and policy enforcement are delegated to CI/CD systems, Kubernetes operators, agentgateway, service meshes, or Kubernetes network policies.
 
 ## Self-Assessment Use
 
@@ -112,11 +112,11 @@ This document provides the CNCF TAG-Security with an initial understanding of ag
 
 - **OIDC Integration**: The registry supports external identity federation through OpenID Connect (OIDC), allowing organizations to integrate their existing identity providers (GitHub OIDC, generic OIDC). Role-based permissions can be mapped from OIDC claims.
 
-- **Kubernetes RBAC**: The Helm chart deploys a ClusterRole (or namespace-scoped Roles when `rbac.watchedNamespaces` is configured) that grants only the permissions necessary for the registry's core function of managing MCP server deployments. RBAC is enabled by default.
+- **Kubernetes RBAC**: The Helm chart deploys a ClusterRole (or namespace-scoped Roles when `rbac.watchedNamespaces` is configured) that grants only the permissions necessary to operate the registry service. RBAC is enabled by default.
 
 - **Pod Security Context**: All containers run with hardened security defaults: non-root user (UID/GID 1001), read-only root filesystem, all Linux capabilities dropped, privilege escalation disabled, and RuntimeDefault seccomp profile. These are enabled by default in the Helm chart.
 
-- **Secret Management**: Integrates with Kubernetes secret management for storing sensitive data like JWT signing keys, database credentials, and deployment configuration. Supports external secret references (`existingSecret`, `global.existingSecret`) for integration with secret management tools (e.g., External Secrets Operator, Vault).
+- **Secret Management**: Integrates with Kubernetes secret management for storing sensitive data like JWT signing keys and database credentials. Supports external secret references (`existingSecret`, `global.existingSecret`) for integration with secret management tools (e.g., External Secrets Operator, Vault).
 
 ### Security Relevant
 
@@ -179,9 +179,9 @@ In the future, agentregistry intends to build and maintain compliance with sever
 
 agentregistry operates within the cloud-native ecosystem as a Kubernetes-native application. It integrates with other technologies in this ecosystem:
 
-- **Kubernetes**: Native integration with Kubernetes APIs, RBAC, and resource management for deploying and managing MCP servers and agents.
+- **Kubernetes**: Native installation support for the registry service through Helm, RBAC, and standard Kubernetes primitives.
 - **Helm**: Deployment and lifecycle management through OCI Helm charts published to `ghcr.io`.
-- **agentgateway (Linux Foundation)**: Acts as the data plane, providing a single MCP endpoint for all deployed servers and enforcing policy and observability.
+- **agentgateway (Linux Foundation)**: Complementary data plane for operators that need a unified MCP endpoint and traffic policy outside the registry.
 - **MCP Ecosystem**: Core alignment with the Model Context Protocol (MCP) specification for AI tool interoperability, supporting MCP servers, agents, and skills as first-class artifacts.
 - **PostgreSQL + pgvector**: Metadata persistence and embedding-based semantic discovery.
 - **Docker / OCI**: Container image format for artifact packaging and distribution.
@@ -216,6 +216,6 @@ No case studies are available at this time. The project is at an early stage (v0
 
 ### Related Projects / Vendors
 
-- **kagent**: A Kubernetes-native AI agent platform. agentregistry uses kagent's CRDs (`kagent.dev` API group) for deploying agents and MCP servers to Kubernetes clusters.
-- **agentgateway (agentgateway)**: A Linux Foundation project that acts as a reverse proxy providing a unified MCP endpoint. agentregistry integrates with agentgateway as an optional data plane component.
-- **MCP Registries**: While other MCP server registries exist, agentregistry differentiates through its governance-first approach with operator-controlled curation, scoring, and deployment lifecycle management.
+- **kagent**: A Kubernetes-native AI agent platform that can consume registry-managed artifacts through external workflows.
+- **agentgateway (agentgateway)**: A Linux Foundation project that acts as a reverse proxy providing a unified MCP endpoint. It is complementary to agentregistry but is not configured by the registry runtime.
+- **MCP Registries**: While other MCP server registries exist, agentregistry differentiates through its governance-first approach with operator-controlled curation, scoring, dependency resolution, and lifecycle metadata.

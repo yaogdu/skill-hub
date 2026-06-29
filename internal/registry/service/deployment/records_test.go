@@ -6,17 +6,17 @@ import (
 	"testing"
 
 	internaldb "github.com/agentregistry-dev/agentregistry/internal/registry/database"
+	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
 	providersvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/provider"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	regdb "github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // failingUndeployAdapter is a minimal platform adapter whose CleanupStale always fails.
-// It implements both DeploymentPlatformAdapter and deployutil.PlatformStaleCleaner.
+// It implements both DeploymentAdapter and deployutil.PlatformStaleCleaner.
 type failingUndeployAdapter struct {
 	undeployErr error
 }
@@ -42,7 +42,7 @@ func (a *failingUndeployAdapter) CleanupStale(_ context.Context, _ *models.Deplo
 	return a.undeployErr
 }
 
-var _ registrytypes.DeploymentPlatformAdapter = (*failingUndeployAdapter)(nil)
+var _ platformtypes.DeploymentAdapter = (*failingUndeployAdapter)(nil)
 
 // successAdapter is a minimal platform adapter that always succeeds.
 type successAdapter struct{}
@@ -64,12 +64,12 @@ func (a *successAdapter) Discover(_ context.Context, _ string) ([]*models.Deploy
 // CleanupStale makes successAdapter satisfy deployutil.PlatformStaleCleaner.
 func (a *successAdapter) CleanupStale(_ context.Context, _ *models.Deployment) error { return nil }
 
-var _ registrytypes.DeploymentPlatformAdapter = (*successAdapter)(nil)
+var _ platformtypes.DeploymentAdapter = (*successAdapter)(nil)
 
 // newTestRegistryWithAdapter sets up a real DB, publishes a test agent, registers a
 // provider with the given platform, and returns the concrete *registry wired to the
 // supplied adapter.
-func newTestRegistryWithAdapter(t *testing.T, adapter registrytypes.DeploymentPlatformAdapter, platform string) (*registry, string, string) {
+func newTestRegistryWithAdapter(t *testing.T, adapter platformtypes.DeploymentAdapter, platform string) (*registry, string, string) {
 	t.Helper()
 	testDB := internaldb.NewTestDB(t)
 	ctx := internaldb.WithTestSession(context.Background())
@@ -105,7 +105,7 @@ func newTestRegistryWithAdapter(t *testing.T, adapter registrytypes.DeploymentPl
 		tx:          testDB,
 		providers:   provSvc,
 		agents:      agentSvc,
-		adapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		adapters: map[string]platformtypes.DeploymentAdapter{
 			platform: adapter,
 		},
 	}
@@ -194,7 +194,7 @@ func TestCleanupExistingDeploymentDeletesDBRecordWhenPlatformUnresolvable(t *tes
 		tx:          testDB,
 		providers:   provSvc,
 		agents:      agentSvc,
-		adapters:    map[string]registrytypes.DeploymentPlatformAdapter{},
+		adapters:    map[string]platformtypes.DeploymentAdapter{},
 	}
 
 	existing, err := reg.CreateManagedDeploymentRecord(ctx, &models.Deployment{

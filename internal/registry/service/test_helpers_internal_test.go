@@ -15,7 +15,6 @@ import (
 	skillsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/skill"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 )
 
@@ -66,7 +65,7 @@ type registryServiceImpl struct {
 	deploymentRepo     database.DeploymentStore
 	cfg                *config.Config
 	embeddingsProvider embeddings.Provider
-	deploymentAdapters map[string]registrytypes.DeploymentPlatformAdapter
+	deploymentAdapters map[string]platformtypes.DeploymentAdapter
 	logger             *slog.Logger
 }
 

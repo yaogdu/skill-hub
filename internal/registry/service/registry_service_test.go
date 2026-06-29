@@ -12,6 +12,7 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/config"
 	internaldb "github.com/agentregistry-dev/agentregistry/internal/registry/database"
 	api "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
+	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
 	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	providersvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/provider"
@@ -19,7 +20,6 @@ import (
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 	"github.com/modelcontextprotocol/registry/pkg/model"
 	"github.com/stretchr/testify/assert"
@@ -920,7 +920,7 @@ func TestDeployServer_AlreadyExistsDoesNotAttemptIdentityCleanup(t *testing.T) {
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"local": &testDeploymentAdapter{},
 		},
 	}
@@ -965,7 +965,7 @@ func TestDeployAgent_AlreadyExistsDoesNotAttemptIdentityCleanup(t *testing.T) {
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"local": &testDeploymentAdapter{},
 		},
 	}
@@ -1373,7 +1373,7 @@ func (m *deploymentMockDB) AcquireApplyLock(context.Context, string) error { ret
 // exercise internal deployment logic directly.
 type deploymentInternals interface {
 	deploymentsvc.Registry
-	ResolveDeploymentAdapter(platform string) (registrytypes.DeploymentPlatformAdapter, error)
+	ResolveDeploymentAdapter(platform string) (platformtypes.DeploymentAdapter, error)
 	CleanupExistingDeployment(ctx context.Context, resourceName, version, resourceType, providerID string) error
 	CreateManagedDeploymentRecord(ctx context.Context, req *models.Deployment) (*models.Deployment, error)
 	ApplyDeploymentActionResult(ctx context.Context, deploymentID string, result *models.DeploymentActionResult) error
@@ -1412,7 +1412,7 @@ func TestIsUnsupportedDeploymentPlatformError(t *testing.T) {
 
 func TestResolveDeploymentAdapter_UnsupportedPlatformReturnsTypedError(t *testing.T) {
 	svc := newDeploymentInternals(deploymentsvc.Dependencies{
-		DeploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{},
+		DeploymentAdapters: map[string]platformtypes.DeploymentAdapter{},
 	})
 
 	_, err := svc.ResolveDeploymentAdapter("unknown-platform")
@@ -1518,7 +1518,7 @@ func TestCleanupExistingDeployment_UsesAdapterStaleCleanerWhenAvailable(t *testi
 	svc := newDeploymentInternals(deploymentsvc.Dependencies{
 		Deployments: mockDB.Deployments(),
 		Providers:   providersvc.New(providersvc.Dependencies{Providers: mockDB.Providers()}),
-		DeploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		DeploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"local": adapter,
 		},
 	})
@@ -1555,7 +1555,7 @@ func TestCleanupExistingDeployment_ProviderScopedIdentity(t *testing.T) {
 	svc := newDeploymentInternals(deploymentsvc.Dependencies{
 		Deployments:        mockDB.Deployments(),
 		Providers:          providersvc.New(providersvc.Dependencies{Providers: mockDB.Providers()}),
-		DeploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{},
+		DeploymentAdapters: map[string]platformtypes.DeploymentAdapter{},
 	})
 
 	// Cleanup for "provider-b" should be a no-op — the only deployment belongs to "provider-a".
@@ -1584,7 +1584,7 @@ func TestUndeployDeployment_UsesAdapterForLocalPlatform(t *testing.T) {
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"local": adapter,
 		},
 	}
@@ -1626,7 +1626,7 @@ func TestUndeployDeployment_FailedOrCancelledRunsAdapterCleanup(t *testing.T) {
 
 			svc := &registryServiceImpl{
 				storeDB: mockDB,
-				deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+				deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 					"local": adapter,
 				},
 			}
@@ -1652,7 +1652,7 @@ func TestCreateDeployment_RejectsUnsupportedResourceTypeForProvider(t *testing.T
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"local": &testDeploymentAdapter{supportedTypes: []string{"mcp"}},
 		},
 	}
@@ -1750,7 +1750,7 @@ func TestCreateDeployment_UsesAdapterResolvedFromProviderPlatform(t *testing.T) 
 
 			svc := &registryServiceImpl{
 				storeDB: mockDB,
-				deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+				deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 					tt.platform: adapter,
 				},
 			}
@@ -1810,7 +1810,7 @@ func TestGetDeployments_AppendsDiscoveredDeploymentsFromAdapters(t *testing.T) {
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"kubernetes": adapter,
 		},
 	}
@@ -1860,7 +1860,7 @@ func TestGetDeployments_DedupesDiscoveredDeploymentsByIdentity(t *testing.T) {
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"kubernetes": adapter,
 		},
 	}
@@ -1917,7 +1917,7 @@ func TestGetDeployments_KeepsDiscoveredDeploymentsDistinctAcrossNamespaces(t *te
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"kubernetes": adapter,
 		},
 	}
@@ -1963,7 +1963,7 @@ func TestGetDeployments_ManagedOriginSkipsDiscovery(t *testing.T) {
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"kubernetes": adapter,
 		},
 	}
@@ -2011,7 +2011,7 @@ func TestGetDeploymentByID_FallsBackToDiscoveredDeployments(t *testing.T) {
 
 	svc := &registryServiceImpl{
 		storeDB: mockDB,
-		deploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		deploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"kubernetes": adapter,
 		},
 	}

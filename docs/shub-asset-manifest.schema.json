@@ -71,6 +71,9 @@
       },
       "default": []
     },
+    "dependencies": {
+      "$ref": "#/$defs/dependencies"
+    },
     "hooks": {
       "$ref": "#/$defs/hooks"
     },
@@ -220,6 +223,68 @@
         },
         "targetPath": {
           "type": "string"
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "prompts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependencyRef"
+          },
+          "default": []
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependencyRef"
+          },
+          "default": []
+        },
+        "mcps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependencyRef"
+          },
+          "default": []
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependencyRef"
+          },
+          "default": []
+        }
+      }
+    },
+    "dependencyRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]*(/[a-z0-9][a-z0-9_-]*)+$"
+        },
+        "version": {
+          "type": "string",
+          "not": {
+            "const": "latest"
+          }
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "prompt",
+            "agent",
+            "mcp"
+          ]
         }
       }
     },

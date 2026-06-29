@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/agentregistry-dev/agentregistry/internal/registry/api/apitypes"
-	"github.com/agentregistry-dev/agentregistry/internal/registry/api/handlers/v0/deploymentmeta"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
 	agentmodels "github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
@@ -36,7 +35,7 @@ type AgentVersionsInput struct {
 	AgentName string `path:"agentName" json:"agentName" doc:"URL-encoded agent name" example:"com.example%2Fmy-agent"`
 }
 
-func RegisterAgentsEndpoints(api huma.API, pathPrefix string, agentSvc agentsvc.Registry, deploymentSvc deploymentmeta.Lister) {
+func RegisterAgentsEndpoints(api huma.API, pathPrefix string, agentSvc agentsvc.Registry) {
 	tags := []string{"agents"}
 	if strings.Contains(pathPrefix, "admin") {
 		tags = append(tags, "admin")
@@ -100,7 +99,6 @@ func RegisterAgentsEndpoints(api huma.API, pathPrefix string, agentSvc agentsvc.
 		for i, a := range agents {
 			agentValues[i] = *a
 		}
-		agentValues = deploymentmeta.AttachAgentDeploymentMeta(ctx, deploymentSvc, agentValues)
 		return &types.Response[agentmodels.AgentListResponse]{
 			Body: agentmodels.AgentListResponse{
 				Agents: agentValues,
@@ -149,11 +147,7 @@ func RegisterAgentsEndpoints(api huma.API, pathPrefix string, agentSvc agentsvc.
 			return nil, huma.Error500InternalServerError("Failed to get agent details", err)
 		}
 		return &types.Response[agentmodels.AgentResponse]{
-			Body: deploymentmeta.AttachAgentDeploymentMeta(
-				ctx,
-				deploymentSvc,
-				[]agentmodels.AgentResponse{*agentResp},
-			)[0],
+			Body: *agentResp,
 		}, nil
 	})
 
@@ -224,7 +218,6 @@ func RegisterAgentsEndpoints(api huma.API, pathPrefix string, agentSvc agentsvc.
 		for i, a := range agents {
 			agentValues[i] = *a
 		}
-		agentValues = deploymentmeta.AttachAgentDeploymentMeta(ctx, deploymentSvc, agentValues)
 		return &types.Response[agentmodels.AgentListResponse]{
 			Body: agentmodels.AgentListResponse{
 				Agents: agentValues,
@@ -242,7 +235,7 @@ type CreateAgentInput struct {
 }
 
 // createAgentHandler is the shared handler logic for creating agents
-func createAgentHandler(ctx context.Context, input *CreateAgentInput, agentSvc agentsvc.Registry, deploymentSvc deploymentmeta.Lister) (*types.Response[agentmodels.AgentResponse], error) {
+func createAgentHandler(ctx context.Context, input *CreateAgentInput, agentSvc agentsvc.Registry) (*types.Response[agentmodels.AgentResponse], error) {
 	// Create/update the agent (published defaults to false in the service layer)
 	createdAgent, err := agentSvc.PublishAgent(ctx, &input.Body)
 	if err != nil {
@@ -259,15 +252,11 @@ func createAgentHandler(ctx context.Context, input *CreateAgentInput, agentSvc a
 	}
 
 	return &types.Response[agentmodels.AgentResponse]{
-		Body: deploymentmeta.AttachAgentDeploymentMeta(
-			ctx,
-			deploymentSvc,
-			[]agentmodels.AgentResponse{*createdAgent},
-		)[0],
+		Body: *createdAgent,
 	}, nil
 }
 
-func RegisterAgentsCreateEndpoint(api huma.API, pathPrefix string, agentSvc agentsvc.Registry, deploymentSvc deploymentmeta.Lister) {
+func RegisterAgentsCreateEndpoint(api huma.API, pathPrefix string, agentSvc agentsvc.Registry) {
 	huma.Register(api, huma.Operation{
 		OperationID: "create-agent" + strings.ReplaceAll(pathPrefix, "/", "-"),
 		Method:      http.MethodPost,
@@ -276,6 +265,6 @@ func RegisterAgentsCreateEndpoint(api huma.API, pathPrefix string, agentSvc agen
 		Description: "Create a new Agentic agent in the registry or update an existing one. Resources are immediately visible after creation.",
 		Tags:        []string{"agents"},
 	}, func(ctx context.Context, input *CreateAgentInput) (*types.Response[agentmodels.AgentResponse], error) {
-		return createAgentHandler(ctx, input, agentSvc, deploymentSvc)
+		return createAgentHandler(ctx, input, agentSvc)
 	})
 }

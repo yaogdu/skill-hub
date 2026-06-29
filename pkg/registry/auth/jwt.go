@@ -35,7 +35,6 @@ const (
 	PermissionActionPublish PermissionAction = "publish"
 	PermissionActionEdit    PermissionAction = "edit"
 	PermissionActionDelete  PermissionAction = "delete"
-	PermissionActionDeploy  PermissionAction = "deploy"
 )
 
 type Permission struct {

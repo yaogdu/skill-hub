@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
     title: AgentRegistry
-    description: AgentRegistry API for managing MCP servers, agents, skills, and deployments.
+    description: AgentRegistry API for managing MCP servers, agents, skills, prompts, and SHUB assets.
     version: dev
 paths:
     /v0/agents:
@@ -619,221 +619,6 @@ paths:
                         application/problem+json:
                             schema:
                                 $ref: '#/components/schemas/ErrorModel'
-    /v0/deployments:
-        get:
-            tags:
-                - deployments
-            summary: List deployed resources
-            description: Retrieve all deployed resources (MCP servers, agents) with their configurations. Optionally filter by resource type.
-            operationId: list-deployments
-            parameters:
-                - name: platform
-                  in: query
-                  description: Filter by provider platform type (matches registered provider platforms)
-                  explode: false
-                  schema:
-                    type: string
-                    description: Filter by provider platform type (matches registered provider platforms)
-                    examples:
-                        - local
-                  example: local
-                - name: providerId
-                  in: query
-                  description: Filter by provider instance ID
-                  explode: false
-                  schema:
-                    type: string
-                    description: Filter by provider instance ID
-                - name: resourceType
-                  in: query
-                  description: Filter by resource type (mcp, agent)
-                  explode: false
-                  schema:
-                    type: string
-                    description: Filter by resource type (mcp, agent)
-                    examples:
-                        - mcp
-                    enum:
-                        - mcp
-                        - agent
-                  example: mcp
-                - name: status
-                  in: query
-                  description: Filter by deployment status
-                  explode: false
-                  schema:
-                    type: string
-                    description: Filter by deployment status
-                - name: origin
-                  in: query
-                  description: Filter by deployment origin (managed, discovered)
-                  explode: false
-                  schema:
-                    type: string
-                    description: Filter by deployment origin (managed, discovered)
-                    enum:
-                        - managed
-                        - discovered
-                - name: resourceName
-                  in: query
-                  description: Case-insensitive substring filter on resource name
-                  explode: false
-                  schema:
-                    type: string
-                    description: Case-insensitive substring filter on resource name
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DeploymentsListResponse'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-        post:
-            tags:
-                - deployments
-            summary: Deploy a resource
-            description: Deploy a resource (MCP server or agent) with deployment env vars (`env`) and optional provider-specific settings (`providerConfig`). Defaults to MCP server if resourceType is not specified.
-            operationId: deploy-server
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/DeploymentRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Deployment'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-    /v0/deployments/{id}:
-        get:
-            tags:
-                - deployments
-            summary: Get deployment details
-            description: Retrieve details for a specific deployment by ID
-            operationId: get-deployment
-            parameters:
-                - name: id
-                  in: path
-                  description: Deployment ID
-                  required: true
-                  schema:
-                    type: string
-                    description: Deployment ID
-                    examples:
-                        - 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-                  example: 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Deployment'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-        delete:
-            tags:
-                - deployments
-            summary: Remove a deployed resource
-            description: Remove a deployment by ID
-            operationId: remove-deployment
-            parameters:
-                - name: id
-                  in: path
-                  description: Deployment ID
-                  required: true
-                  schema:
-                    type: string
-                    description: Deployment ID
-                    examples:
-                        - 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-                  example: 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-            responses:
-                "204":
-                    description: No Content
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-    /v0/deployments/{id}/cancel:
-        post:
-            tags:
-                - deployments
-            summary: Cancel deployment
-            description: Cancel a deployment when supported by the provider
-            operationId: cancel-deployment
-            parameters:
-                - name: id
-                  in: path
-                  description: Deployment ID
-                  required: true
-                  schema:
-                    type: string
-                    description: Deployment ID
-                    examples:
-                        - 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-                  example: 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-            responses:
-                "204":
-                    description: No Content
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-    /v0/deployments/{id}/logs:
-        get:
-            tags:
-                - deployments
-            summary: Get deployment logs
-            description: Get logs for async deployments when supported by the provider
-            operationId: get-deployment-logs
-            parameters:
-                - name: id
-                  in: path
-                  description: Deployment ID
-                  required: true
-                  schema:
-                    type: string
-                    description: Deployment ID
-                    examples:
-                        - 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-                  example: 6b7ce4ab-ec3d-4789-95f4-8be5fac2e6be
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DeploymentLogsBody'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
     /v0/health:
         get:
             tags:
@@ -1080,124 +865,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/EmptyResponse'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-    /v0/providers:
-        get:
-            tags:
-                - providers
-            summary: List providers
-            description: List configured deployment target providers.
-            operationId: list-providers
-            parameters:
-                - name: platform
-                  in: query
-                  description: Filter providers by platform type
-                  explode: false
-                  schema:
-                    type: string
-                    description: Filter providers by platform type
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ProvidersListResponseBody'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-        post:
-            tags:
-                - providers
-            summary: Create provider
-            description: Create a deployment target provider for a specific platform type.
-            operationId: create-provider
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/CreateProviderInput'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Provider'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-    /v0/providers/{providerId}:
-        get:
-            tags:
-                - providers
-            summary: Get provider
-            description: Get a provider by ID.
-            operationId: get-provider
-            parameters:
-                - name: providerId
-                  in: path
-                  description: Provider ID
-                  required: true
-                  schema:
-                    type: string
-                    description: Provider ID
-                - name: platform
-                  in: query
-                  description: Provider platform hint (optional)
-                  explode: false
-                  schema:
-                    type: string
-                    description: Provider platform hint (optional)
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Provider'
-                default:
-                    description: Error
-                    content:
-                        application/problem+json:
-                            schema:
-                                $ref: '#/components/schemas/ErrorModel'
-        delete:
-            tags:
-                - providers
-            summary: Delete provider
-            description: Delete a provider by ID.
-            operationId: delete-provider
-            parameters:
-                - name: providerId
-                  in: path
-                  description: Provider ID
-                  required: true
-                  schema:
-                    type: string
-                    description: Provider ID
-                - name: platform
-                  in: query
-                  description: Provider platform hint (optional)
-                  explode: false
-                  schema:
-                    type: string
-                    description: Provider platform hint (optional)
-            responses:
-                "204":
-                    description: No Content
                 default:
                     description: Error
                     content:
@@ -1981,8 +1648,6 @@ components:
             type: object
             additionalProperties: false
             properties:
-                aregistry.ai/deployments:
-                    $ref: '#/components/schemas/ResourceDeploymentsMeta'
                 aregistry.ai/semantic:
                     $ref: '#/components/schemas/AgentSemanticMeta'
                 io.modelcontextprotocol.registry/official:
@@ -2110,6 +1775,39 @@ components:
                         type: string
             required:
                 - run
+        AssetDependencies:
+            type: object
+            additionalProperties: false
+            properties:
+                agents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssetDependencyRef'
+                mcps:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssetDependencyRef'
+                prompts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssetDependencyRef'
+                skills:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssetDependencyRef'
+        AssetDependencyRef:
+            type: object
+            additionalProperties: false
+            properties:
+                category:
+                    type: string
+                id:
+                    type: string
+                version:
+                    type: string
+            required:
+                - id
+                - version
         AssetEntry:
             type: object
             additionalProperties: false
@@ -2184,6 +1882,8 @@ components:
                         type: string
                 category:
                     type: string
+                dependencies:
+                    $ref: '#/components/schemas/AssetDependencies'
                 description:
                     type: string
                 entry:
@@ -2348,168 +2048,6 @@ components:
             required:
                 - path
                 - bodyFormat
-        CreateProviderInput:
-            type: object
-            additionalProperties: false
-            properties:
-                config:
-                    type: object
-                    additionalProperties: {}
-                id:
-                    type: string
-                name:
-                    type: string
-                platform:
-                    type: string
-            required:
-                - name
-                - platform
-        Deployment:
-            type: object
-            additionalProperties: false
-            properties:
-                deployedAt:
-                    type: string
-                    format: date-time
-                env:
-                    type: object
-                    additionalProperties:
-                        type: string
-                error:
-                    type: string
-                id:
-                    type: string
-                origin:
-                    type: string
-                preferRemote:
-                    type: boolean
-                providerConfig:
-                    type: object
-                    additionalProperties: {}
-                providerId:
-                    type: string
-                providerMetadata:
-                    type: object
-                    additionalProperties: {}
-                resourceType:
-                    type: string
-                serverName:
-                    type: string
-                status:
-                    type: string
-                updatedAt:
-                    type: string
-                    format: date-time
-                version:
-                    type: string
-            required:
-                - id
-                - serverName
-                - version
-                - resourceType
-                - status
-                - origin
-                - env
-                - preferRemote
-                - deployedAt
-                - updatedAt
-        DeploymentLogsBody:
-            type: object
-            additionalProperties: false
-            properties:
-                deploymentId:
-                    type: string
-                logs:
-                    type: array
-                    items:
-                        type: string
-                status:
-                    type: string
-            required:
-                - deploymentId
-                - status
-                - logs
-        DeploymentRequest:
-            type: object
-            additionalProperties: false
-            properties:
-                env:
-                    type: object
-                    description: Deployment environment variables.
-                    additionalProperties:
-                        type: string
-                preferRemote:
-                    type: boolean
-                    description: Prefer remote deployment over local
-                    default: false
-                providerConfig:
-                    type: object
-                    description: Optional provider-specific deployment settings (not env vars).
-                    additionalProperties: {}
-                providerId:
-                    type: string
-                    description: Concrete provider instance ID.
-                resourceType:
-                    type: string
-                    description: Type of resource to deploy (mcp, agent)
-                    default: mcp
-                    examples:
-                        - mcp
-                    enum:
-                        - mcp
-                        - agent
-                serverName:
-                    type: string
-                    description: Server name to deploy
-                    examples:
-                        - io.github.user/weather
-                version:
-                    type: string
-                    description: Version to deploy (use 'latest' for latest version)
-                    default: latest
-                    examples:
-                        - 1.0.0
-            required:
-                - serverName
-                - version
-                - providerId
-        DeploymentSummary:
-            type: object
-            additionalProperties: false
-            properties:
-                deployedAt:
-                    type: string
-                    format: date-time
-                id:
-                    type: string
-                origin:
-                    type: string
-                providerId:
-                    type: string
-                status:
-                    type: string
-                updatedAt:
-                    type: string
-                    format: date-time
-                version:
-                    type: string
-            required:
-                - id
-                - status
-                - origin
-                - deployedAt
-                - updatedAt
-        DeploymentsListResponse:
-            type: object
-            additionalProperties: false
-            properties:
-                deployments:
-                    type: array
-                    description: List of deployed servers
-                    items:
-                        $ref: '#/components/schemas/Deployment'
-            required:
-                - deployments
         EmptyResponse:
             type: object
             additionalProperties: false
@@ -2909,45 +2447,6 @@ components:
             properties:
                 io.modelcontextprotocol.registry/official:
                     $ref: '#/components/schemas/PromptRegistryExtensions'
-        Provider:
-            type: object
-            additionalProperties: false
-            properties:
-                config:
-                    type: object
-                    additionalProperties: {}
-                createdAt:
-                    type: string
-                    format: date-time
-                id:
-                    type: string
-                name:
-                    type: string
-                platform:
-                    type: string
-                updatedAt:
-                    type: string
-                    format: date-time
-            required:
-                - id
-                - name
-                - platform
-                - createdAt
-                - updatedAt
-        ProvidersListResponseBody:
-            type: object
-            additionalProperties: false
-            properties:
-                count:
-                    type: integer
-                    format: int64
-                providers:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Provider'
-            required:
-                - providers
-                - count
         RegistryExtensions:
             type: object
             additionalProperties: false
@@ -3009,20 +2508,6 @@ components:
                     format: uri
                     examples:
                         - https://github.com/modelcontextprotocol/servers
-        ResourceDeploymentsMeta:
-            type: object
-            additionalProperties: false
-            properties:
-                count:
-                    type: integer
-                    format: int64
-                deployments:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/DeploymentSummary'
-            required:
-                - deployments
-                - count
         Result:
             type: object
             additionalProperties: false
@@ -3183,8 +2668,6 @@ components:
             type: object
             additionalProperties: false
             properties:
-                aregistry.ai/deployments:
-                    $ref: '#/components/schemas/ResourceDeploymentsMeta'
                 aregistry.ai/semantic:
                     $ref: '#/components/schemas/ServerSemanticMeta'
                 io.modelcontextprotocol.registry/official:

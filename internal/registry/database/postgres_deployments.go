@@ -27,7 +27,7 @@ func (s *deploymentStore) CreateDeployment(ctx context.Context, deployment *mode
 	if deployment.ResourceType == "agent" {
 		artifactType = auth.PermissionArtifactTypeAgent
 	}
-	if err := s.authz.Check(ctx, auth.PermissionActionDeploy, auth.Resource{
+	if err := s.authz.Check(ctx, auth.PermissionActionPublish, auth.Resource{
 		Name: deployment.ServerName,
 		Type: artifactType,
 	}); err != nil {
@@ -371,7 +371,7 @@ func (s *deploymentStore) DeleteDeployment(ctx context.Context, id string) error
 	if deployment.ResourceType == "agent" {
 		artifactType = auth.PermissionArtifactTypeAgent
 	}
-	if err := s.authz.Check(ctx, auth.PermissionActionDeploy, auth.Resource{
+	if err := s.authz.Check(ctx, auth.PermissionActionDelete, auth.Resource{
 		Name: deployment.ServerName,
 		Type: artifactType,
 	}); err != nil {

@@ -8,15 +8,15 @@ import (
 	"slices"
 	"strings"
 
+	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 )
 
 type Dependencies struct {
 	StoreDB           database.Store
 	Providers         database.ProviderStore
-	ProviderPlatforms map[string]registrytypes.ProviderPlatformAdapter
+	ProviderPlatforms map[string]platformtypes.ProviderAdapter
 }
 
 // Does not embed database.ProviderReader because ListProviders normalizes the
@@ -29,7 +29,7 @@ type Registry interface {
 	UpdateProvider(ctx context.Context, providerID, platformHint string, in *models.UpdateProviderInput) (*models.Provider, error)
 	ApplyProvider(ctx context.Context, providerID, platform string, in *models.UpdateProviderInput) (*models.Provider, error)
 	DeleteProvider(ctx context.Context, providerID, platformHint string) error
-	PlatformAdapters() map[string]registrytypes.ProviderPlatformAdapter
+	PlatformAdapters() map[string]platformtypes.ProviderAdapter
 }
 
 type UnsupportedPlatformError struct {
@@ -51,7 +51,7 @@ func IsUnsupportedPlatformError(err error) bool {
 
 type registry struct {
 	providers database.ProviderStore
-	adapters  map[string]registrytypes.ProviderPlatformAdapter
+	adapters  map[string]platformtypes.ProviderAdapter
 }
 
 var _ Registry = (*registry)(nil)
@@ -64,14 +64,14 @@ func New(deps Dependencies) Registry {
 	// When StoreDB is provided (production path), build default platform adapters
 	// and merge any caller-supplied overrides on top. When only Providers is set
 	// directly (tests/custom wiring), use only what the caller supplies.
-	var adapters map[string]registrytypes.ProviderPlatformAdapter
+	var adapters map[string]platformtypes.ProviderAdapter
 	if deps.StoreDB != nil && deps.Providers != nil {
 		adapters = defaultPlatformAdapters(deps.Providers)
 		maps.Copy(adapters, deps.ProviderPlatforms)
 	} else if deps.ProviderPlatforms != nil {
 		adapters = deps.ProviderPlatforms
 	} else {
-		adapters = map[string]registrytypes.ProviderPlatformAdapter{}
+		adapters = map[string]platformtypes.ProviderAdapter{}
 	}
 
 	return &registry{
@@ -80,7 +80,7 @@ func New(deps Dependencies) Registry {
 	}
 }
 
-func (r *registry) PlatformAdapters() map[string]registrytypes.ProviderPlatformAdapter {
+func (r *registry) PlatformAdapters() map[string]platformtypes.ProviderAdapter {
 	return r.adapters
 }
 
@@ -251,7 +251,7 @@ func (r *registry) DeleteProvider(ctx context.Context, providerID, platformHint 
 	return r.providers.DeleteProvider(ctx, provider.ID)
 }
 
-func (r *registry) resolveAdapter(platform string) (registrytypes.ProviderPlatformAdapter, bool) {
+func (r *registry) resolveAdapter(platform string) (platformtypes.ProviderAdapter, bool) {
 	adapter, ok := r.adapters[normalizePlatform(platform)]
 	return adapter, ok
 }
@@ -270,7 +270,7 @@ func (r *registry) resolveProviderFromStore(ctx context.Context, providerID, pla
 	return provider, nil
 }
 
-func adapterPlatforms(adapters map[string]registrytypes.ProviderPlatformAdapter) []string {
+func adapterPlatforms(adapters map[string]platformtypes.ProviderAdapter) []string {
 	platforms := make([]string, 0, len(adapters))
 	for platform := range adapters {
 		platforms = append(platforms, platform)

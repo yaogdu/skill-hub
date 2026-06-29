@@ -9,15 +9,15 @@ import (
 	"strings"
 	"time"
 
+	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/service/internal/deployutil"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 )
 
 // ResolveDeploymentAdapter returns the adapter registered for the given platform name.
-func (s *registry) ResolveDeploymentAdapter(platform string) (registrytypes.DeploymentPlatformAdapter, error) {
+func (s *registry) ResolveDeploymentAdapter(platform string) (platformtypes.DeploymentAdapter, error) {
 	providerPlatform := strings.ToLower(strings.TrimSpace(platform))
 	if providerPlatform == "" {
 		return nil, fmt.Errorf("%w: deployment platform is required", database.ErrInvalidInput)
@@ -31,7 +31,7 @@ func (s *registry) ResolveDeploymentAdapter(platform string) (registrytypes.Depl
 
 // ResolveDeploymentAdapterByProviderID looks up the provider by ID and returns its
 // deployment adapter.
-func (s *registry) ResolveDeploymentAdapterByProviderID(ctx context.Context, providerID string) (registrytypes.DeploymentPlatformAdapter, error) {
+func (s *registry) ResolveDeploymentAdapterByProviderID(ctx context.Context, providerID string) (platformtypes.DeploymentAdapter, error) {
 	resolvedProviderID := strings.TrimSpace(providerID)
 	if resolvedProviderID == "" {
 		return nil, fmt.Errorf("%w: provider id is required", database.ErrInvalidInput)
@@ -210,7 +210,7 @@ func (s *registry) resolveProviderByID(ctx context.Context, providerID string) (
 	return s.providers.GetProvider(ctx, providerID)
 }
 
-func deploymentAdapterSupportsResourceType(adapter registrytypes.DeploymentPlatformAdapter, resourceType string) bool {
+func deploymentAdapterSupportsResourceType(adapter platformtypes.DeploymentAdapter, resourceType string) bool {
 	if adapter == nil {
 		return false
 	}

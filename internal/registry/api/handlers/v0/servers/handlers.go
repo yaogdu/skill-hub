@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/agentregistry-dev/agentregistry/internal/registry/api/apitypes"
-	"github.com/agentregistry-dev/agentregistry/internal/registry/api/handlers/v0/deploymentmeta"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
@@ -88,7 +87,7 @@ type ServerReadmeResponse struct {
 	FetchedAt   time.Time `json:"fetchedAt"`
 }
 
-func RegisterServersEndpoints(api huma.API, pathPrefix string, serverSvc serversvc.Registry, deploymentSvc deploymentmeta.Lister) {
+func RegisterServersEndpoints(api huma.API, pathPrefix string, serverSvc serversvc.Registry) {
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-server-version" + strings.ReplaceAll(pathPrefix, "/", "-"),
 		Method:      http.MethodDelete,
@@ -184,7 +183,6 @@ func RegisterServersEndpoints(api huma.API, pathPrefix string, serverSvc servers
 		for i, server := range servers {
 			serverValues[i] = normalizeServerResponse(server)
 		}
-		serverValues = deploymentmeta.AttachServerDeploymentMeta(ctx, deploymentSvc, serverValues)
 
 		return &types.Response[models.ServerListResponse]{
 			Body: models.ServerListResponse{
@@ -234,7 +232,6 @@ func RegisterServersEndpoints(api huma.API, pathPrefix string, serverSvc servers
 			for i, server := range servers {
 				serverValues[i] = normalizeServerResponse(server)
 			}
-			serverValues = deploymentmeta.AttachServerDeploymentMeta(ctx, deploymentSvc, serverValues)
 
 			return &types.Response[models.ServerListResponse]{
 				Body: models.ServerListResponse{
@@ -294,11 +291,7 @@ func RegisterServersEndpoints(api huma.API, pathPrefix string, serverSvc servers
 
 		return &types.Response[models.ServerListResponse]{
 			Body: models.ServerListResponse{
-				Servers: deploymentmeta.AttachServerDeploymentMeta(
-					ctx,
-					deploymentSvc,
-					[]models.ServerResponse{normalizeServerResponse(serverResponse)},
-				),
+				Servers: []models.ServerResponse{normalizeServerResponse(serverResponse)},
 				Metadata: models.ServerMetadata{
 					Count: 1,
 				},
@@ -337,7 +330,6 @@ func RegisterServersEndpoints(api huma.API, pathPrefix string, serverSvc servers
 		for i, server := range servers {
 			serverValues[i] = normalizeServerResponse(server)
 		}
-		serverValues = deploymentmeta.AttachServerDeploymentMeta(ctx, deploymentSvc, serverValues)
 
 		return &types.Response[models.ServerListResponse]{
 			Body: models.ServerListResponse{
@@ -444,7 +436,7 @@ type CreateServerInput struct {
 }
 
 // createServerHandler is the shared handler logic for creating servers
-func createServerHandler(ctx context.Context, input *CreateServerInput, serverSvc serversvc.Registry, deploymentSvc deploymentmeta.Lister) (*types.Response[models.ServerResponse], error) {
+func createServerHandler(ctx context.Context, input *CreateServerInput, serverSvc serversvc.Registry) (*types.Response[models.ServerResponse], error) {
 	createdServer, err := serverSvc.PublishServer(ctx, &input.Body)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
@@ -460,15 +452,11 @@ func createServerHandler(ctx context.Context, input *CreateServerInput, serverSv
 	}
 
 	return &types.Response[models.ServerResponse]{
-		Body: deploymentmeta.AttachServerDeploymentMeta(
-			ctx,
-			deploymentSvc,
-			[]models.ServerResponse{normalizeServerResponse(createdServer)},
-		)[0],
+		Body: normalizeServerResponse(createdServer),
 	}, nil
 }
 
-func RegisterServersCreateEndpoint(api huma.API, pathPrefix string, serverSvc serversvc.Registry, deploymentSvc deploymentmeta.Lister) {
+func RegisterServersCreateEndpoint(api huma.API, pathPrefix string, serverSvc serversvc.Registry) {
 	huma.Register(api, huma.Operation{
 		OperationID: "create-server" + strings.ReplaceAll(pathPrefix, "/", "-"),
 		Method:      http.MethodPost,
@@ -477,6 +465,6 @@ func RegisterServersCreateEndpoint(api huma.API, pathPrefix string, serverSvc se
 		Description: "Create a new MCP server in the registry or update an existing one. Resources are immediately visible after creation.",
 		Tags:        []string{"servers"},
 	}, func(ctx context.Context, input *CreateServerInput) (*types.Response[models.ServerResponse], error) {
-		return createServerHandler(ctx, input, serverSvc, deploymentSvc)
+		return createServerHandler(ctx, input, serverSvc)
 	})
 }

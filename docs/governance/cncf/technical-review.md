@@ -42,9 +42,9 @@ The primary use case is providing organizations with a centralized, trusted regi
 A concrete example shown in the project documentation is publishing an Anthropic Skill to the registry and consuming it directly from Claude Code via `arctl configure claude-desktop`.
 
 _Additional Supported Use Cases:_
-- **MCP server aggregation via Agentgateway:** The registry integrates with [agentgateway](https://github.com/agentgateway/agentgateway) to expose all deployed MCP servers through a single unified endpoint. This allows AI IDE clients to connect once and access all available tools without per-server configuration.
+- **MCP and skill configuration export:** The registry generates client configuration for approved MCP servers and skills. Operators can pair those exported configurations with a runtime such as agentgateway, but runtime routing is outside the registry.
 - **IDE configuration generation:** `arctl configure` generates ready-to-use configuration files for Claude Desktop, Cursor, and VS Code, reducing the friction of connecting AI tools to a local or team registry.
-- **Multi-environment artifact deployment:** Artifacts can be deployed to any target environment (local, cloud, Kubernetes) from a single registry, unifying AI infrastructure management across deployment targets.
+- **CI/CD artifact resolution:** Agents and skills can resolve pinned SHUB dependencies from a single registry during build and release pipelines, improving reproducibility across environments.
 - **Artifact enrichment and scoring:** The registry automatically validates and scores ingested artifacts, producing metadata that operators can use to assess safety, quality, and trustworthiness before approving artifacts for developer use.
 - **Local development registry:** Developers can run a full registry locally via Docker Compose for testing and development workflows, with seed data automatically imported on first run.
 
@@ -53,7 +53,7 @@ _Additional Supported Use Cases:_
 The following use cases are not supported, and are currently considered out of scope:
 - **General-purpose OCI artifact or container image registry:** Agentregistry is purpose-built for agentic AI artifacts (MCP servers, agents, skills). It is not a replacement for OCI-compatible container registries such as Harbor or Docker Hub. Container image distribution is out of scope.
 - **AI model registry or model storage:** Agentregistry does not store, version, or serve machine learning model weights or model files. It manages the metadata, configuration, and composition of agentic tools and skills, not the underlying models they invoke.
-- **Runtime execution environment:** Agentregistry does not execute agents or MCP servers directly. Execution is handled by the target environment (e.g., the Agentgateway and the underlying runtime). The registry manages lifecycle metadata, not runtime orchestration.
+- **Runtime deployment environment:** Agentregistry does not execute or deploy agents and MCP servers as a managed runtime. Execution and rollout are handled by CI/CD, Kubernetes, agentgateway, IDEs, or another runtime platform. The registry manages lifecycle metadata, packages, and dependency resolution.
 - **Agent versioning (currently in progress):** Versioning for agents and skills is not yet implemented. Until released, use cases requiring immutable, versioned artifact references are not fully supported.
 
 **Describe the intended types of organizations who would benefit from adopting this project. (i.e. financial services, any software manufacturer, organizations providing platform engineering services)?**
@@ -79,7 +79,7 @@ _Operators interact primarily through the Web UI and the CLI for governance work
 1. **Import** — Pull AI artifacts (MCP servers, agents, skills) from external sources into the registry. This can be done via the Web UI using the purple `+ Add` button, selecting the artifact type (Agent, MCP Server, or Skill) and providing its metadata, name, description, version, and container image path or repository reference. The CLI `arctl skill publish` and `arctl mcp publish` commands are available for scripted or CI/CD-driven ingestion.
 2. **Review and enrich** — Inspect automatically generated scores and validation metadata in the Web UI's artifact detail views (the Servers, Agents, and Skills views). Operators use this enriched metadata to make approval decisions.
 3. **Curate and publish** — Selectively publish approved artifacts into a curated catalog that developers can access, maintaining end-to-end audit and control from the registry.
-4. **Deploy to environments** — Use `arctl deploy` or the Web UI to promote approved artifacts to target environments (local Docker, Kubernetes clusters).
+4. **Promote and distribute** — Promote approved artifact versions through registry metadata and publish packages for consumption by CI/CD or developer tools.
 
 _Developers interact primarily through the CLI for day-to-day workflows._
 1. **Install** — Install the `arctl` CLI via the provided shell script or by downloading a binary directly from the GitHub releases page:
@@ -91,9 +91,9 @@ _Developers interact primarily through the CLI for day-to-day workflows._
    - `arctl configure claude-desktop`
    - `arctl configure cursor`
    - `arctl configure vscode`
-   These commands write the appropriate MCP configuration so the IDE routes tool calls through the agentgateway to the deployed servers.
+   These commands write the appropriate MCP configuration for the selected IDE or client. Runtime routing is handled by the configured client or gateway.
 4. **Create and publish** — Scaffold new agents, skills, or MCP servers using `arctl agent`, `arctl skill`, or `arctl mcp` subcommands, then publish them back to the registry using the corresponding `publish` subcommand.
-5. **Run and deploy** — Use `arctl run` to run an artifact locally, and `arctl deploy` to promote it to a target environment. The `arctl show` command retrieves full artifact details from the registry.
+5. **Run and inspect** — Use local run commands for development-time testing where supported. The `arctl show` command retrieves full artifact details from the registry.
 
 **Describe the user experience (UX) and user interface (UI) of the project.**
 
@@ -101,12 +101,12 @@ _This is described as part of the above answer_
 
 **Describe how this project integrates with other projects in a production environment.**
 
-In production, agentregistry acts as the **control plane** for agentic AI infrastructure — it manages the catalog, governance, and configuration of AI artifacts — while complementary projects handle execution, traffic routing, and deployment. The key integrations are:
-- **agentgateway (Linux Foundation):** The most significant integration. Agentgateway is a reverse proxy purpose-built for AI traffic that provides a single, unified MCP endpoint for all deployed servers. In a production deployment, agentregistry and agentgateway work as a pair, where agentregistry holds the catalog of approved artifacts, while agentgateway receives mCP traffic from AI IDE clients (ie Claude Desktop, Cursor, VS Code) and droutes tools calls to the appropriate backend MCP server.
-- **Kubernetes / Helm:** In production, agentregistry is deployed to a Kubernetes cluster using the published OCI Helm chart (`oci://ghcr.io/agentregistry-dev/agentregistry/charts/agentregistry`). It integrates with standard Kubernetes primitives: Deployments, Services, ConfigMaps, and Secrets (for the JWT private key and database credentials). The Kubernetes Gateway API (`gateway.networking.k8s.io`) is used for agentgateway routing configuration.
+In production, agentregistry acts as the **control plane** for agentic AI asset governance — it manages the catalog, package metadata, dependency resolution, and configuration exports — while complementary projects handle execution, traffic routing, and deployment. The key integrations are:
+- **agentgateway (Linux Foundation):** Agentgateway is a reverse proxy purpose-built for AI traffic. Operators can use registry-managed artifact metadata and exported configuration to configure an agentgateway deployment, but agentregistry does not deploy or mutate gateway routing itself.
+- **Kubernetes / Helm:** In production, agentregistry is deployed to a Kubernetes cluster using the published OCI Helm chart (`oci://ghcr.io/agentregistry-dev/agentregistry/charts/agentregistry`). It integrates with standard Kubernetes primitives for operating the registry service: Deployments, Services, ConfigMaps, and Secrets (for the JWT private key and database credentials).
 - **PostgreSQL with pgvector:** agentregistry requires PostgreSQL with the pgvector extension as its persistent storage backend. In production, this may be an externally managed PostgreSQL instance. The pgvector extension enables semantic/embedding-based search across the artifact catalog.
 - **Container registries:** agentregistry integrates with whatever container registry an organization already uses, with no lock-in to a specific image storage backend.
-- **AI-powered IDEs (Claude Desktop, Cursor, VS Code):** agentregistry integrates with AI IDEs not as a runtime dependency, but as a configuration provider. The `arctl configure` command writes MCP configuration files to the developer's local filesystem in the format expected by each IDE. Once configured, the IDE connects directly to the agentgateway; agentregistry is not in the request path at runtime.
+- **AI-powered IDEs (Claude Desktop, Cursor, VS Code):** agentregistry integrates with AI IDEs not as a runtime dependency, but as a configuration provider. The `arctl configure` command writes MCP configuration files to the developer's local filesystem in the format expected by each IDE. Once configured, the IDE connects to the configured MCP endpoints directly; agentregistry is not in the request path at runtime.
 - **Model Context Protocol (MCP):** agentregistry is built around MCP as the core protocol for tool and agent interoperability. MCP servers are the primary artifact type managed by the registry. Compatibility with the MCP specification is foundational to the project's design, and the registry is expected to track and align with MCP specification evolution over time.
 
 ---
@@ -125,7 +125,7 @@ In production, agentregistry acts as the **control plane** for agentic AI infras
 See [`DEVELOPMENT.md`](https://github.com/yaogdu/skill-hub/blob/main/DEVELOPMENT.md) for detailed architecture information, specifically the `Architecture Overview` section.
 
 **Describe how this project integrates with other projects in a production environment.**
-- **agentgateway (Linux Foundation):** Acts as the data plane, providing a single MCP endpoint for all deployed servers and enforcing policy and observability.
+- **agentgateway (Linux Foundation):** Optional complementary data plane for MCP traffic and policy outside the registry.
 - **MCP SDK / Model Context Protocol:** Core protocol for tool and agent interoperability.
 - **Kubernetes / Helm:** Deployment and lifecycle management.
 - **PostgreSQL + pgvector:** Metadata persistence and semantic discovery.
@@ -149,7 +149,7 @@ See [`DEVELOPMENT.md`](https://github.com/yaogdu/skill-hub/blob/main/DEVELOPMENT
 The registry server is stateless; HA is achieved by running multiple replicas behind a load balancer in Kubernetes. PostgreSQL HA is the responsibility of the operator (e.g., using CloudNativePG or a managed cloud database service). 
 
 **Describe how the project has addressed sovereignty.**
-Because agentregistry is self-hosted (no external SaaS dependency for core registry functions), operators retain full control over artifact metadata and deployed registry data within their own infrastructure.
+Because agentregistry is self-hosted (no external SaaS dependency for core registry functions), operators retain full control over artifact metadata and registry data within their own infrastructure.
 
 **Describe any compliance requirements addressed by the project.**
 No regulatory or compliance frameworks are currently supported. 
@@ -186,7 +186,7 @@ Agentregistry applies cloud native security principles across its architecture, 
 
 **Describe how each of the cloud native principles apply to your project.**
 - **Defense in Depth:** agentregistry employs multiple independent layers of security controls. API authentication is handled via JWT tokens, with support for external identity providers through OIDC. Authorization is enforced per-request through a dedicated `AuthzProvider`. At the infrastructure level, Kubernetes pod security contexts enforce non-root execution, read-only root filesystems, dropped Linux capabilities, and a RuntimeDefault seccomp profile. Database connections default to SSL mode `require`, encrypting data in transit between the registry server and PostgreSQL.
-- **Least Privilege:** The Kubernetes RBAC configuration grants only the permissions necessary for the registry's core function of managing MCP server deployments.
+- **Least Privilege:** The Kubernetes RBAC configuration grants only the permissions necessary to operate the registry service and its supporting resources.
 - **Zero Trust:** Every API request is subject to authentication and authorization checks.
 - **Secure Defaults:** The Helm chart ships with security-hardened defaults that require no additional configuration.
 - **Separation of Concerns:**  The project is architected as distinct components with well-defined interfaces. The database is only accessed through the dedicated database layer. Authentication and authorization are handled through clearly defined interfaces.
@@ -208,7 +208,7 @@ Operators who need to relax security controls for specific environments can use 
 The following features have been identified as carrying security risk if not actively maintained:
 
 1. **JWT private key management** — The signing key is set statically at deploy time (`config.jwtPrivateKey` or via `existingSecret`). There is no built-in key rotation mechanism. If the key is compromised, all issued tokens are at risk until the key is manually rotated.
-2. **Public action allowlist** — The current authorization implementation (`pkg/registry/auth/authz.go`) includes a temporary allowlist that permits `read`, `publish`, `delete`, and `deploy` actions without authentication. This is documented in the code as a development convenience and is flagged for removal before production hardening.
+2. **Public action allowlist** — The current authorization implementation (`pkg/registry/auth/authz.go`) includes a temporary allowlist for selected unauthenticated actions. This is documented in the code as a development convenience and is flagged for removal before production hardening.
 3. **Dependency vulnerability scanning** — The project does not currently have automated dependency scanning (e.g., Dependabot, Renovate, `govulncheck`, Trivy) integrated into CI. Vulnerabilities in transitive dependencies may go undetected without manual triage.
 4. **Artifact signing and provenance** — Released container images and Helm charts are not signed (no cosign/sigstore integration) and no SBOM or provenance attestation is generated. Users cannot cryptographically verify the integrity of published artifacts.
 

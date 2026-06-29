@@ -9,20 +9,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Package, ExternalLink, GitBranch, Star, Github, Globe, Trash2, ShieldCheck, BadgeCheck, Play } from "lucide-react"
+import { Package, ExternalLink, GitBranch, Star, Github, Globe, Trash2, ShieldCheck, BadgeCheck } from "lucide-react"
 
 interface ServerCardProps {
   server: ServerResponse
   onDelete?: (server: ServerResponse) => void
-  onDeploy?: (server: ServerResponse) => void
   showDelete?: boolean
-  showDeploy?: boolean
   showExternalLinks?: boolean
   onClick?: () => void
   versionCount?: number
 }
 
-export function ServerCard({ server, onDelete, onDeploy, showDelete = false, showDeploy = false, showExternalLinks = true, onClick, versionCount }: ServerCardProps) {
+export function ServerCard({ server, onDelete, showDelete = false, showExternalLinks = true, onClick, versionCount }: ServerCardProps) {
   const { server: serverData, _meta } = server
   const official = _meta?.['io.modelcontextprotocol.registry/official']
 
@@ -30,7 +28,6 @@ export function ServerCard({ server, onDelete, onDeploy, showDelete = false, sho
   const publisherMetadata = publisherProvided?.['aregistry.ai/metadata'] as Record<string, any> | undefined
   const githubStars = publisherMetadata?.stars
   const identityData = publisherMetadata?.identity
-  const hasOciPackage = serverData.packages?.some(pkg => pkg.registryType === "oci") ?? false
 
   const formatDate = (dateString: string) => {
     try {
@@ -135,36 +132,6 @@ export function ServerCard({ server, onDelete, onDeploy, showDelete = false, sho
         </div>
 
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          {showDeploy && onDeploy && (
-            hasOciPackage ? (
-              <Button
-                variant="default"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={(e) => { e.stopPropagation(); onDeploy(server) }}
-              >
-                <Play className="h-3 w-3" aria-hidden="true" />
-                Deploy
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0} className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="h-7 gap-1 text-xs pointer-events-none"
-                      disabled
-                    >
-                      <Play className="h-3 w-3" aria-hidden="true" />
-                      Deploy
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent><p>No OCI package available</p></TooltipContent>
-              </Tooltip>
-            )
-          )}
           {showExternalLinks && serverData.repository?.url && (
             <Button
               variant="ghost"

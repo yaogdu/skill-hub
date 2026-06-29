@@ -51,7 +51,7 @@ func generateSpec(apiVersion string) *huma.OpenAPI {
 	mux := http.NewServeMux()
 
 	humaConfig := huma.DefaultConfig("AgentRegistry", apiVersion)
-	humaConfig.Info.Description = "AgentRegistry API for managing MCP servers, agents, skills, and deployments."
+	humaConfig.Info.Description = "AgentRegistry API for managing MCP servers, agents, skills, prompts, and SHUB assets."
 	// Disable $schema property injection in responses
 	humaConfig.CreateHooks = []func(huma.Config) huma.Config{}
 

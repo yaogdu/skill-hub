@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"maps"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,15 +25,11 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/importer"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/jobs"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/kinds"
-	"github.com/agentregistry-dev/agentregistry/internal/registry/platforms/kubernetes"
-	"github.com/agentregistry-dev/agentregistry/internal/registry/platforms/local"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/seed"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/service"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
 	assetsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/asset"
-	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	promptsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/prompt"
-	providersvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/provider"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	shubsourcesvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/shubsource"
 	skillsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/skill"
@@ -42,7 +37,6 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/telemetry"
 	"github.com/agentregistry-dev/agentregistry/internal/version"
 	"github.com/agentregistry-dev/agentregistry/pkg/logging"
-	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
 	"github.com/agentregistry-dev/agentregistry/pkg/types"
@@ -186,16 +180,6 @@ func App(ctx context.Context, opts ...types.AppOptions) error {
 		Config:             cfg,
 		EmbeddingsProvider: embeddingProvider,
 	})
-	providerService := providersvc.New(providersvc.Dependencies{
-		StoreDB:           db,
-		ProviderPlatforms: options.ProviderPlatforms,
-	})
-	providerPlatforms := providerService.PlatformAdapters()
-	deploymentPlatforms := map[string]types.DeploymentPlatformAdapter{
-		"local":      local.NewLocalDeploymentAdapter(serverService, agentService, cfg.RuntimeDir, cfg.AgentGatewayPort),
-		"kubernetes": kubernetes.NewKubernetesDeploymentAdapter(providerService, serverService, agentService),
-	}
-	maps.Copy(deploymentPlatforms, options.DeploymentPlatforms)
 	skillService := skillsvc.New(skillsvc.Dependencies{Skills: db.Skills(), Tx: db})
 	packageStore, err := assetsvc.NewFilesystemPackageStore(cfg.StorageDir, authz)
 	if err != nil {
@@ -217,14 +201,6 @@ func App(ctx context.Context, opts ...types.AppOptions) error {
 		return fmt.Errorf("bootstrap registry admin: %w", err)
 	}
 	promptService := promptsvc.New(promptsvc.Dependencies{Prompts: db.Prompts(), Tx: db})
-	deploymentService := deploymentsvc.New(deploymentsvc.Dependencies{
-		StoreDB:            db,
-		Deployments:        db.Deployments(),
-		Providers:          providerService,
-		Servers:            serverService,
-		Agents:             agentService,
-		DeploymentAdapters: deploymentPlatforms,
-	})
 	// Import builtin seed data unless it is disabled
 	if !cfg.DisableBuiltinSeed {
 		slog.Info("importing builtin seed data in the background")
@@ -281,7 +257,7 @@ func App(ctx context.Context, opts ...types.AppOptions) error {
 		}
 	}()
 
-	// Build the kind registry and register all 6 OSS kinds.
+	// Build the kind registry for asset management APIs.
 	kindReg := kinds.NewRegistry()
 	kindReg.Register(kinds.Kind{
 		Kind:     "agent",
@@ -336,39 +312,9 @@ func App(ctx context.Context, opts ...types.AppOptions) error {
 		},
 		InitTemplate: kinds.MakeInitTemplate("mcp", kinds.MCPSpec{Description: "TODO: describe your MCP server"}),
 	})
-	kindReg.Register(kinds.Kind{
-		Kind:     "provider",
-		Plural:   "providers",
-		Aliases:  []string{"Provider"},
-		SpecType: reflect.TypeFor[kinds.ProviderSpec](),
-		Apply:    providerApplyFunc(providerService),
-		Get:      func(ctx context.Context, name, _ string) (any, error) { return providerService.GetProvider(ctx, name) },
-		Delete:   func(ctx context.Context, name, _ string) error { return providerService.DeleteProvider(ctx, name, "") },
-		TableColumns: []kinds.Column{
-			{Header: "NAME"}, {Header: "PLATFORM"},
-		},
-		InitTemplate: kinds.MakeInitTemplate("provider", kinds.ProviderSpec{
-			Platform: "kubernetes",
-		}),
-	})
-	kindReg.Register(kinds.Kind{
-		Kind:     "deployment",
-		Plural:   "deployments",
-		Aliases:  []string{"Deployment"},
-		SpecType: reflect.TypeFor[kinds.DeploymentSpec](),
-		Apply:    deploymentApplyFunc(deploymentService),
-		Delete:   deploymentDeleteFunc(deploymentService),
-		TableColumns: []kinds.Column{
-			{Header: "NAME"}, {Header: "VERSION"}, {Header: "RESOURCE_TYPE"},
-			{Header: "PROVIDER"}, {Header: "STATUS"},
-		},
-	})
-
 	routeOpts := &router.RouteOptions{
-		ProviderPlatforms:   providerPlatforms,
-		DeploymentPlatforms: deploymentPlatforms,
-		ExtraRoutes:         options.ExtraRoutes,
-		KindRegistry:        kindReg,
+		ExtraRoutes:  options.ExtraRoutes,
+		KindRegistry: kindReg,
 	}
 
 	// Initialize job manager and indexer for embeddings.
@@ -387,10 +333,8 @@ func App(ctx context.Context, opts ...types.AppOptions) error {
 		Skill:      skillService,
 		Asset:      assetService,
 		Prompt:     promptService,
-		Provider:   providerService,
 		SHUBSource: shubSourceService,
 		UserAuth:   userAuthService,
-		Deployment: deploymentService,
 	}, metrics, versionInfo, options.UIHandler, authnProvider, routeOpts)
 
 	var server types.Server
@@ -406,7 +350,7 @@ func App(ctx context.Context, opts ...types.AppOptions) error {
 
 	var mcpHTTPServer *http.Server
 	if cfg.MCPPort > 0 {
-		mcpServer := mcpregistry.NewServer(serverService, agentService, skillService, deploymentService)
+		mcpServer := mcpregistry.NewServer(serverService, agentService, skillService)
 
 		var handler http.Handler = mcp.NewStreamableHTTPHandler(func(_ *http.Request) *mcp.Server {
 			return mcpServer
@@ -498,118 +442,4 @@ func setupLogging(levelStr string) {
 	}
 	// set all loggers to the specified level
 	logging.Reset(level)
-}
-
-// providerApplyFunc returns the Apply function for the provider kind.
-// Extracted from the inline registration to keep the registration block declarative.
-func providerApplyFunc(svc providersvc.Registry) kinds.ApplyFunc {
-	return func(ctx context.Context, doc *kinds.Document, opts kinds.ApplyOpts) (*kinds.Result, error) {
-		spec, err := kinds.AssertSpec[kinds.ProviderSpec]("provider", doc)
-		if err != nil {
-			return nil, err
-		}
-		if spec.Platform == "" {
-			return nil, fmt.Errorf("provider: spec.platform is required")
-		}
-		if opts.DryRun {
-			_, err := svc.GetProvider(ctx, doc.Metadata.Name)
-			if err != nil {
-				return &kinds.Result{Kind: "provider", Name: doc.Metadata.Name, Status: kinds.StatusCreated}, nil
-			}
-			return &kinds.Result{Kind: "provider", Name: doc.Metadata.Name, Status: kinds.StatusConfigured}, nil
-		}
-		name := doc.Metadata.Name
-		cfg := spec.Config
-		if cfg == nil {
-			cfg = map[string]any{}
-		}
-		if _, err := svc.ApplyProvider(ctx, name, spec.Platform, &models.UpdateProviderInput{
-			Name: &name, Config: cfg,
-		}); err != nil {
-			return nil, err
-		}
-		return kinds.AppliedResult("provider", doc), nil
-	}
-}
-
-// deploymentApplyFunc returns the Apply function for the deployment kind.
-// Extracted from the inline registration to keep the registration block declarative.
-func deploymentApplyFunc(svc deploymentsvc.Registry) kinds.ApplyFunc {
-	return func(ctx context.Context, doc *kinds.Document, opts kinds.ApplyOpts) (*kinds.Result, error) {
-		spec, err := kinds.AssertSpec[kinds.DeploymentSpec]("deployment", doc)
-		if err != nil {
-			return nil, err
-		}
-		if spec.ProviderID == "" {
-			return nil, fmt.Errorf("deployment: spec.providerId is required")
-		}
-		rt := spec.ResourceType
-		// "server" is accepted as an alias for "mcp" for backwards compatibility.
-		if rt != "agent" && rt != "mcp" && rt != "server" {
-			return nil, fmt.Errorf("deployment: spec.resourceType must be one of \"agent\", \"mcp\", \"server\"; got %q", rt)
-		}
-		if opts.DryRun {
-			resourceName := doc.Metadata.Name
-			existing, listErr := svc.ListDeployments(ctx, &models.DeploymentFilter{ResourceName: &resourceName})
-			status := kinds.StatusCreated
-			if listErr == nil {
-				for _, d := range existing {
-					if d.ServerName == doc.Metadata.Name && (doc.Metadata.Version == "" || d.Version == doc.Metadata.Version) {
-						status = kinds.StatusConfigured
-						break
-					}
-				}
-			}
-			return &kinds.Result{Kind: "deployment", Name: doc.Metadata.Name, Version: doc.Metadata.Version, Status: status}, nil
-		}
-		if rt == "agent" {
-			if _, err := svc.ApplyAgentDeployment(ctx, doc.Metadata.Name, doc.Metadata.Version, spec.ProviderID, spec.Env, spec.ProviderConfig, spec.PreferRemote, opts.Force); err != nil {
-				return nil, err
-			}
-		} else {
-			if _, err := svc.ApplyServerDeployment(ctx, doc.Metadata.Name, doc.Metadata.Version, spec.ProviderID, spec.Env, spec.ProviderConfig, spec.PreferRemote, opts.Force); err != nil {
-				return nil, err
-			}
-		}
-		return kinds.AppliedResult("deployment", doc), nil
-	}
-}
-
-// deploymentDeleteFunc returns the Delete function for the deployment kind.
-// The server-side DELETE /v0/apply batch handler dispatches here when a
-// deployment doc is included. A non-empty version is required — deployments
-// are identified by (name, version, provider), so an empty version could
-// span multiple versions and cause surprise bulk deletes. The same
-// (name, version) can still map to multiple deployments (one per provider);
-// all of those are removed.
-func deploymentDeleteFunc(svc deploymentsvc.Registry) kinds.DeleteFunc {
-	return func(ctx context.Context, name, version string) error {
-		if version == "" {
-			return fmt.Errorf("%w: version is required when deleting deployments", database.ErrInvalidInput)
-		}
-		matches, err := svc.ListDeployments(ctx, &models.DeploymentFilter{ResourceName: &name})
-		if err != nil {
-			return fmt.Errorf("listing deployments: %w", err)
-		}
-		var toDelete []*models.Deployment
-		for _, d := range matches {
-			if d == nil {
-				continue
-			}
-			if d.ServerName != name || d.Version != version {
-				continue
-			}
-			toDelete = append(toDelete, d)
-		}
-		if len(toDelete) == 0 {
-			return database.ErrNotFound
-		}
-		var errs []error
-		for _, d := range toDelete {
-			if err := svc.DeleteDeployment(ctx, d.ID); err != nil {
-				errs = append(errs, fmt.Errorf("deleting %s (provider %s): %w", d.ID, d.ProviderID, err))
-			}
-		}
-		return errors.Join(errs...)
-	}
 }

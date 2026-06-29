@@ -27,9 +27,8 @@ type Client struct {
 }
 
 const (
-	defaultBaseURL          = "http://localhost:12121/v0"
-	DefaultBaseURL          = defaultBaseURL
-	defaultDeployProviderID = "local"
+	defaultBaseURL = "http://localhost:12121/v0"
+	DefaultBaseURL = defaultBaseURL
 
 	envARCTLAPIBaseURL = "ARCTL_API_BASE_URL"
 	envARCTLAPIToken   = "ARCTL_API_TOKEN"
@@ -38,8 +37,6 @@ const (
 )
 
 type VersionBody = apitypes.VersionBody
-
-type deploymentRequest = apitypes.DeploymentRequest
 
 type IndexRequest = apitypes.IndexRequest
 
@@ -50,10 +47,6 @@ type JobProgress = apitypes.JobProgress
 type JobResult = apitypes.JobResult
 
 type JobStatusResponse = apitypes.JobStatusResponse
-
-type DeploymentResponse = models.Deployment
-
-type DeploymentsListResponse = apitypes.DeploymentsListResponse
 
 // NewClientFromEnv constructs a client using environment variables
 func NewClientFromEnv() (*Client, error) {
@@ -545,21 +538,6 @@ func (c *Client) UploadAssetPackage(assetID, version string, content []byte, con
 	return &resp, nil
 }
 
-// GetProviders returns all providers.
-func (c *Client) GetProviders() ([]*models.Provider, error) {
-	req, err := c.newRequest(http.MethodGet, "/providers")
-	if err != nil {
-		return nil, err
-	}
-	var resp struct {
-		Providers []*models.Provider `json:"providers"`
-	}
-	if err := c.doJSON(req, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Providers, nil
-}
-
 func (c *Client) GetSHUBSources() ([]*models.SHUBSource, error) {
 	req, err := c.newRequest(http.MethodGet, "/shub/sources")
 	if err != nil {
@@ -722,28 +700,6 @@ func (c *Client) PullAssetFromSource(sourceName, assetID, version string) (*mode
 	}
 	c.normalizeAssetResponse(&resp)
 	return &resp, nil
-}
-
-// GetProvider returns a single provider by ID.
-func (c *Client) GetProvider(providerID string) (*models.Provider, error) {
-	req, err := c.newRequest(http.MethodGet, "/providers/"+url.PathEscape(providerID))
-	if err != nil {
-		return nil, err
-	}
-	var resp models.Provider
-	if err := c.doJSON(req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
-}
-
-// DeleteProvider deletes a provider by ID.
-func (c *Client) DeleteProvider(providerID string) error {
-	req, err := c.newRequest(http.MethodDelete, "/providers/"+url.PathEscape(providerID))
-	if err != nil {
-		return err
-	}
-	return c.doJSON(req, nil)
 }
 
 // GetAgents returns all agents from connected registries
@@ -1016,100 +972,6 @@ func resolveRelativeURL(baseURL, ref string) string {
 		return ""
 	}
 	return base.ResolveReference(relative).String()
-}
-
-// GetDeployedServers retrieves all deployed servers
-func (c *Client) GetDeployedServers() ([]*DeploymentResponse, error) {
-	req, err := c.newRequest(http.MethodGet, "/deployments")
-	if err != nil {
-		return nil, err
-	}
-
-	var resp DeploymentsListResponse
-	if err := c.doJSON(req, &resp); err != nil {
-		return nil, err
-	}
-
-	// Convert to pointer slice
-	result := make([]*DeploymentResponse, len(resp.Deployments))
-	for i := range resp.Deployments {
-		result[i] = &resp.Deployments[i]
-	}
-
-	return result, nil
-}
-
-// GetDeployment retrieves a deployment by ID.
-func (c *Client) GetDeployment(id string) (*DeploymentResponse, error) {
-	encID := url.PathEscape(id)
-	req, err := c.newRequest(http.MethodGet, "/deployments/"+encID)
-	if err != nil {
-		return nil, err
-	}
-
-	var deployment DeploymentResponse
-	if err := c.doJSON(req, &deployment); err != nil {
-		if strings.Contains(err.Error(), "404") || strings.Contains(err.Error(), "Not Found") {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to get deployment: %w", err)
-	}
-
-	return &deployment, nil
-}
-
-// DeployServer deploys a server with deployment environment variables.
-func (c *Client) DeployServer(name, version string, env map[string]string, preferRemote bool, providerID string) (*DeploymentResponse, error) {
-	if strings.TrimSpace(providerID) == "" {
-		providerID = defaultDeployProviderID
-	}
-	payload := deploymentRequest{
-		ServerName:   name,
-		Version:      version,
-		Env:          env,
-		PreferRemote: preferRemote,
-		ResourceType: "mcp",
-		ProviderID:   providerID,
-	}
-
-	var deployment DeploymentResponse
-	if err := c.doJsonRequest(http.MethodPost, "/deployments", payload, &deployment); err != nil {
-		return nil, err
-	}
-
-	return &deployment, nil
-}
-
-// DeployAgent deploys an agent with deployment environment variables.
-func (c *Client) DeployAgent(name, version string, env map[string]string, providerID string) (*DeploymentResponse, error) {
-	if strings.TrimSpace(providerID) == "" {
-		providerID = defaultDeployProviderID
-	}
-	payload := deploymentRequest{
-		ServerName:   name,
-		Version:      version,
-		Env:          env,
-		ResourceType: "agent",
-		ProviderID:   providerID,
-	}
-
-	var deployment DeploymentResponse
-	if err := c.doJsonRequest(http.MethodPost, "/deployments", payload, &deployment); err != nil {
-		return nil, err
-	}
-
-	return &deployment, nil
-}
-
-// DeleteDeployment removes a deployment by ID.
-func (c *Client) DeleteDeployment(id string) error {
-	encID := url.PathEscape(id)
-	req, err := c.newRequest(http.MethodDelete, "/deployments/"+encID)
-	if err != nil {
-		return err
-	}
-
-	return c.doJSON(req, nil)
 }
 
 // ApplyOpts carries cross-cutting batch options for the POST /v0/apply endpoint.

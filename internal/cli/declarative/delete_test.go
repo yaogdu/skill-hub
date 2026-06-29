@@ -127,11 +127,11 @@ func TestDeleteFileModeNoAPIClient(t *testing.T) {
 	assert.Contains(t, err.Error(), "API client not initialized")
 }
 
-// TestDeleteExplicitModeWithoutVersion verifies that --version is optional
-// (providers don't use versions; the server validates if needed).
+// TestDeleteExplicitModeWithoutVersion verifies that --version is optional at
+// the CLI layer; the server validates whether a resource type requires it.
 func TestDeleteExplicitModeWithoutVersion(t *testing.T) {
 	cmd := declarative.NewDeleteCmd()
-	cmd.SetArgs([]string{"provider", "my-aws"})
+	cmd.SetArgs([]string{"agent", "my-agent"})
 	err := cmd.Execute()
 	// Fails because no API client is set, but NOT because of missing version.
 	require.Error(t, err)

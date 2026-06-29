@@ -2,7 +2,6 @@ package apitypes
 
 import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/jobs"
-	"github.com/agentregistry-dev/agentregistry/pkg/models"
 )
 
 // VersionBody represents API version information.
@@ -10,17 +9,6 @@ type VersionBody struct {
 	Version   string `json:"version" example:"v1.0.0" doc:"Application version"`
 	GitCommit string `json:"git_commit" example:"abc123d" doc:"Git commit SHA"`
 	BuildTime string `json:"build_time" example:"2025-10-14T12:00:00Z" doc:"Build timestamp"`
-}
-
-// DeploymentRequest represents the input for deploying a resource.
-type DeploymentRequest struct {
-	ServerName     string            `json:"serverName" doc:"Server name to deploy" example:"io.github.user/weather"`
-	Version        string            `json:"version" doc:"Version to deploy (use 'latest' for latest version)" default:"latest" example:"1.0.0"`
-	Env            map[string]string `json:"env,omitempty" doc:"Deployment environment variables."`
-	ProviderConfig map[string]any    `json:"providerConfig,omitempty" doc:"Optional provider-specific deployment settings (not env vars)."`
-	PreferRemote   bool              `json:"preferRemote,omitempty" doc:"Prefer remote deployment over local" default:"false"`
-	ResourceType   string            `json:"resourceType,omitempty" doc:"Type of resource to deploy (mcp, agent)" default:"mcp" example:"mcp" enum:"mcp,agent"`
-	ProviderID     string            `json:"providerId" doc:"Concrete provider instance ID." required:"true"`
 }
 
 // IndexRequest is the request body for embeddings indexing.
@@ -54,21 +42,4 @@ type JobStatusResponse struct {
 	Result    *JobResult  `json:"result,omitempty" doc:"Final result (when completed or failed)"`
 	CreatedAt string      `json:"createdAt" doc:"Job creation timestamp"`
 	UpdatedAt string      `json:"updatedAt" doc:"Last update timestamp"`
-}
-
-// DeploymentsListResponse is the deployment list response body.
-type DeploymentsListResponse struct {
-	Deployments []models.Deployment `json:"deployments" doc:"List of deployed servers"`
-}
-
-// DeploymentLogsBody is the JSON body returned for deployment logs requests.
-type DeploymentLogsBody struct {
-	DeploymentID string   `json:"deploymentId"`
-	Status       string   `json:"status"`
-	Logs         []string `json:"logs"`
-}
-
-// DeploymentLogsResponse is the deployment logs response wrapper.
-type DeploymentLogsResponse struct {
-	Body DeploymentLogsBody
 }

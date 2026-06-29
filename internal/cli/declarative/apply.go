@@ -46,7 +46,7 @@ Examples:
 		"YAML file to apply (repeatable; use - for stdin)")
 	_ = cmd.MarkFlagRequired("filename")
 	cmd.Flags().BoolVar(&force, "force", false,
-		"Replace drifted deployments (required when drift is detected)")
+		"Force replacement when supported by the server")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false,
 		"Validate and simulate without mutating state")
 	return cmd

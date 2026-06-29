@@ -93,6 +93,10 @@ func TestSkillDocumentToAsset(t *testing.T) {
 					Version: ">=3.10",
 					Install: &models.AssetInstall{Strategy: "uv", Path: "pyproject.toml", Lockfile: "uv.lock"},
 				},
+				Dependencies: models.AssetDependencies{
+					Prompts: []models.AssetDependencyRef{{ID: "security/code-review", Version: "1.2.0"}},
+					MCPs:    []models.AssetDependencyRef{{ID: "infra/k8s-readonly", Version: "0.8.3"}},
+				},
 				Exports: []models.AssetExport{{Target: "codex", Mode: "prompt-file", Source: "SKILL.md"}},
 			},
 		},
@@ -113,6 +117,9 @@ func TestSkillDocumentToAsset(t *testing.T) {
 	}
 	if len(asset.AllowedTools) != 2 {
 		t.Fatalf("AllowedTools length = %d, want 2", len(asset.AllowedTools))
+	}
+	if got := asset.Manifest.Dependencies.Prompts[0]; got.ID != "security/code-review" || got.Version != "1.2.0" {
+		t.Fatalf("prompt dependency = %+v, want security/code-review@1.2.0", got)
 	}
 }
 
@@ -166,6 +173,27 @@ func TestSkillDocumentToAsset_Errors(t *testing.T) {
 				},
 			},
 			errContains: "prompt assets must use entry.kind=skill-body",
+		},
+		{
+			name: "latest dependency rejected",
+			document: models.SkillDocument{
+				Frontmatter: models.SkillFrontmatter{
+					Name:        "helper",
+					Description: "helpful",
+					Version:     "1.0.0",
+					Shub: models.SkillFrontmatterShub{
+						SchemaVersion: models.ShubSkillSchemaVersion,
+						ID:            "demo/helper",
+						Category:      models.AssetCategoryAgent,
+						Entry:         models.AssetEntry{Kind: "command", Path: "bin/run"},
+						Runtime:       models.AssetRuntime{Type: "none"},
+						Dependencies: models.AssetDependencies{
+							Prompts: []models.AssetDependencyRef{{ID: "security/code-review", Version: "latest"}},
+						},
+					},
+				},
+			},
+			errContains: "dependencies.prompts[0].version must be pinned",
 		},
 	}
 

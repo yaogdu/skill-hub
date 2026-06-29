@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,9 +16,7 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/config"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
 	assetsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/asset"
-	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	promptsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/prompt"
-	providersvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/provider"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	skillsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/skill"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/telemetry"
@@ -27,7 +24,6 @@ import (
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
 	shubskills "github.com/agentregistry-dev/agentregistry/pkg/skills"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 	"github.com/modelcontextprotocol/registry/pkg/model"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -537,56 +533,6 @@ func (s *fakeDeploymentStore) DeleteDeployment(ctx context.Context, id string) e
 
 func (s *fakeDeploymentStore) AcquireApplyLock(context.Context, string) error { return nil }
 
-type fakeClientDeploymentAdapter struct{ registry *fakeClientRegistry }
-
-func (a *fakeClientDeploymentAdapter) Platform() string { return "local" }
-
-func (a *fakeClientDeploymentAdapter) SupportedResourceTypes() []string {
-	return []string{"mcp", "agent"}
-}
-
-func (a *fakeClientDeploymentAdapter) Deploy(ctx context.Context, deployment *models.Deployment) (*models.DeploymentActionResult, error) {
-	if deployment == nil {
-		return nil, database.ErrInvalidInput
-	}
-	fn := a.registry.DeployServerFn
-	if deployment.ResourceType == "agent" {
-		fn = a.registry.DeployAgentFn
-	}
-	if fn != nil {
-		result, err := fn(ctx, deployment.ServerName, deployment.Version, deployment.Env, deployment.PreferRemote, deployment.ProviderID)
-		if err != nil {
-			return nil, err
-		}
-		if result != nil && result.Status != "" {
-			return &models.DeploymentActionResult{Status: result.Status}, nil
-		}
-	}
-	return &models.DeploymentActionResult{Status: models.DeploymentStatusDeployed}, nil
-}
-
-func (a *fakeClientDeploymentAdapter) Undeploy(context.Context, *models.Deployment) error {
-	return nil
-}
-
-func (a *fakeClientDeploymentAdapter) GetLogs(ctx context.Context, deployment *models.Deployment) ([]string, error) {
-	if a.registry.GetDeploymentLogsFn != nil {
-		return a.registry.GetDeploymentLogsFn(ctx, deployment)
-	}
-	return nil, database.ErrNotFound
-}
-
-func (a *fakeClientDeploymentAdapter) Cancel(ctx context.Context, deployment *models.Deployment) error {
-	if a.registry.CancelDeploymentFn != nil {
-		return a.registry.CancelDeploymentFn(ctx, deployment)
-	}
-	return database.ErrNotFound
-}
-
-func (a *fakeClientDeploymentAdapter) Discover(context.Context, string) ([]*models.Deployment, error) {
-	return nil, nil
-}
-
 func TestClientIntegration_PingAndVersion(t *testing.T) {
 	fake := newFakeClientRegistry()
 	client, cleanup := newClientWithInProcessServer(t, fake)
@@ -990,216 +936,6 @@ func TestClientIntegration_UploadAssetPackage_HappyPath(t *testing.T) {
 	}
 }
 
-func TestClientIntegration_DeploymentRoutes_HappyPath(t *testing.T) {
-	now := time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC)
-	fake := newFakeClientRegistry()
-
-	fake.GetDeploymentsFn = func(_ context.Context, _ *models.DeploymentFilter) ([]*models.Deployment, error) {
-		return []*models.Deployment{
-			{
-				ID:           "dep-list-1",
-				ServerName:   "acme/weather",
-				Version:      "1.0.0",
-				ResourceType: "mcp",
-				Status:       "deployed",
-				Origin:       "managed",
-				PreferRemote: true,
-				DeployedAt:   now,
-				UpdatedAt:    now,
-			},
-		}, nil
-	}
-	fake.GetServerByNameAndVersionFn = func(_ context.Context, serverName, version string) (*apiv0.ServerResponse, error) {
-		return &apiv0.ServerResponse{
-			Server: apiv0.ServerJSON{Name: serverName, Version: version},
-		}, nil
-	}
-	fake.GetAgentByNameAndVersionFn = func(_ context.Context, agentName, version string) (*models.AgentResponse, error) {
-		return &models.AgentResponse{
-			Agent: models.AgentJSON{
-				AgentManifest: models.AgentManifest{Name: agentName, Version: version},
-				Version:       version,
-			},
-		}, nil
-	}
-
-	var createdDeployments []*models.Deployment
-	createdByID := map[string]*models.Deployment{}
-	var removedIDs []string
-	fake.CreateDeploymentFn = func(_ context.Context, req *models.Deployment) (*models.Deployment, error) {
-		createdDeployments = append(createdDeployments, req)
-		id := req.ID
-		if id == "" {
-			id = "dep-created-" + strconv.Itoa(len(createdDeployments))
-		}
-		created := &models.Deployment{
-			ID:           id,
-			ServerName:   req.ServerName,
-			Version:      req.Version,
-			ProviderID:   req.ProviderID,
-			ResourceType: req.ResourceType,
-			Status:       "deployed",
-			Origin:       "managed",
-			PreferRemote: req.PreferRemote,
-			DeployedAt:   now,
-			UpdatedAt:    now,
-		}
-		createdByID[created.ID] = created
-		return created, nil
-	}
-	fake.GetDeploymentByIDFn = func(_ context.Context, id string) (*models.Deployment, error) {
-		deployment, ok := createdByID[id]
-		if !ok {
-			return nil, database.ErrNotFound
-		}
-		return deployment, nil
-	}
-	fake.RemoveDeploymentByIDFn = func(_ context.Context, id string) error {
-		if _, ok := createdByID[id]; !ok {
-			return database.ErrNotFound
-		}
-		removedIDs = append(removedIDs, id)
-		delete(createdByID, id)
-		return nil
-	}
-	client, cleanup := newClientWithInProcessServer(t, fake)
-	defer cleanup()
-
-	list, err := client.GetDeployedServers()
-	if err != nil {
-		t.Fatalf("GetDeployedServers() failed: %v", err)
-	}
-	if len(list) != 1 || list[0].ServerName != "acme/weather" {
-		t.Fatalf("GetDeployedServers() returned unexpected payload: %#v", list)
-	}
-
-	deployedServer, err := client.DeployServer(
-		"acme/weather",
-		"1.0.0",
-		map[string]string{"API_KEY": "secret"},
-		true,
-		"",
-	)
-	if err != nil {
-		t.Fatalf("DeployServer() failed: %v", err)
-	}
-	if deployedServer == nil || deployedServer.ResourceType != "mcp" {
-		t.Fatalf("DeployServer() returned unexpected payload: %#v", deployedServer)
-	}
-	if deployedServer.ID == "" {
-		t.Fatalf("DeployServer() returned empty deployment id: %#v", deployedServer)
-	}
-	deployedServerSecond, err := client.DeployServer(
-		"acme/weather",
-		"1.0.0",
-		map[string]string{"API_KEY": "secret"},
-		true,
-		defaultDeployProviderID,
-	)
-	if err != nil {
-		t.Fatalf("second DeployServer() failed: %v", err)
-	}
-	if deployedServerSecond == nil || deployedServerSecond.ID == "" {
-		t.Fatalf("second DeployServer() returned empty deployment id: %#v", deployedServerSecond)
-	}
-	if deployedServerSecond.ID == deployedServer.ID {
-		t.Fatalf("expected distinct deployment IDs, got %q", deployedServer.ID)
-	}
-	createdByGet, err := client.GetDeployment(deployedServer.ID)
-	if err != nil {
-		t.Fatalf("GetDeployment() failed: %v", err)
-	}
-	if createdByGet == nil || createdByGet.ID != deployedServer.ID {
-		t.Fatalf("GetDeployment() returned unexpected payload: %#v", createdByGet)
-	}
-	createdByGetSecond, err := client.GetDeployment(deployedServerSecond.ID)
-	if err != nil {
-		t.Fatalf("GetDeployment(second) failed: %v", err)
-	}
-	if createdByGetSecond == nil || createdByGetSecond.ID != deployedServerSecond.ID {
-		t.Fatalf("GetDeployment(second) returned unexpected payload: %#v", createdByGetSecond)
-	}
-	if err := client.DeleteDeployment(deployedServer.ID); err != nil {
-		t.Fatalf("DeleteDeployment() failed: %v", err)
-	}
-	if err := client.DeleteDeployment(deployedServerSecond.ID); err != nil {
-		t.Fatalf("DeleteDeployment(second) failed: %v", err)
-	}
-
-	deployedAgent, err := client.DeployAgent(
-		"acme/planner",
-		"2.0.0",
-		map[string]string{"MODE": "fast"},
-		"",
-	)
-	if err != nil {
-		t.Fatalf("DeployAgent() failed: %v", err)
-	}
-	if deployedAgent == nil || deployedAgent.ResourceType != "agent" {
-		t.Fatalf("DeployAgent() returned unexpected payload: %#v", deployedAgent)
-	}
-	if deployedAgent.ID == "" {
-		t.Fatalf("DeployAgent() returned empty deployment id: %#v", deployedAgent)
-	}
-
-	// Regression: redeploying the same agent/version should produce a new deployment ID.
-	deployedAgentSecond, err := client.DeployAgent(
-		"acme/planner",
-		"2.0.0",
-		map[string]string{"MODE": "fast"},
-		defaultDeployProviderID,
-	)
-	if err != nil {
-		t.Fatalf("second DeployAgent() failed: %v", err)
-	}
-	if deployedAgentSecond == nil || deployedAgentSecond.ResourceType != "agent" {
-		t.Fatalf("second DeployAgent() returned unexpected payload: %#v", deployedAgentSecond)
-	}
-	if deployedAgentSecond.ID == "" {
-		t.Fatalf("second DeployAgent() returned empty deployment id: %#v", deployedAgentSecond)
-	}
-	if deployedAgentSecond.ID == deployedAgent.ID {
-		t.Fatalf("expected distinct agent deployment IDs, got %q", deployedAgent.ID)
-	}
-
-	if err := client.DeleteDeployment(deployedAgent.ID); err != nil {
-		t.Fatalf("DeleteDeployment(agent) failed: %v", err)
-	}
-	if err := client.DeleteDeployment(deployedAgentSecond.ID); err != nil {
-		t.Fatalf("DeleteDeployment(agent second) failed: %v", err)
-	}
-
-	if len(createdDeployments) != 4 {
-		t.Fatalf("expected 4 CreateDeployment() calls, got %d", len(createdDeployments))
-	}
-	if createdDeployments[0].ResourceType != "mcp" ||
-		createdDeployments[1].ResourceType != "mcp" ||
-		createdDeployments[2].ResourceType != "agent" ||
-		createdDeployments[3].ResourceType != "agent" {
-		t.Fatalf("unexpected deployment resource types: %#v", createdDeployments)
-	}
-	if createdDeployments[0].ProviderID != "local" ||
-		createdDeployments[1].ProviderID != "local" ||
-		createdDeployments[2].ProviderID != "local" ||
-		createdDeployments[3].ProviderID != "local" {
-		t.Fatalf("unexpected deployment provider IDs: %#v", createdDeployments)
-	}
-	if len(removedIDs) != 4 ||
-		removedIDs[0] != deployedServer.ID ||
-		removedIDs[1] != deployedServerSecond.ID ||
-		removedIDs[2] != deployedAgent.ID ||
-		removedIDs[3] != deployedAgentSecond.ID {
-		t.Fatalf(
-			"expected removal of deployments %q, %q, %q, %q; got %#v",
-			deployedServer.ID,
-			deployedServerSecond.ID,
-			deployedAgent.ID,
-			deployedAgentSecond.ID,
-			removedIDs,
-		)
-	}
-}
-
 func newClientWithInProcessServer(t *testing.T, fake *fakeClientRegistry) (*Client, func()) {
 	t.Helper()
 
@@ -1222,23 +958,6 @@ func newClientWithInProcessServer(t *testing.T, fake *fakeClientRegistry) (*Clie
 		StorageDir:    t.TempDir(),
 	}
 
-	routeOpts := &router.RouteOptions{
-		ProviderPlatforms: map[string]registrytypes.ProviderPlatformAdapter{
-			"local": &testProviderAdapter{
-				provider: &models.Provider{
-					ID:       defaultDeployProviderID,
-					Name:     "Local provider",
-					Platform: "local",
-				},
-			},
-		},
-	}
-
-	deploymentAdapter := &fakeClientDeploymentAdapter{registry: fake}
-	providerRegistry := providersvc.New(providersvc.Dependencies{
-		StoreDB:           fake,
-		ProviderPlatforms: routeOpts.ProviderPlatforms,
-	})
 	skillRegistry := skillsvc.New(skillsvc.Dependencies{StoreDB: fake})
 	packageStore, err := assetsvc.NewFilesystemPackageStore(cfg.StorageDir, auth.Authorizer{
 		Authz: auth.NewPublicAuthzProviderWithActions(nil, []auth.PermissionAction{
@@ -1253,24 +972,18 @@ func newClientWithInProcessServer(t *testing.T, fake *fakeClientRegistry) (*Clie
 	router.NewHumaAPI(
 		cfg,
 		router.RegistryServices{
-			Server:   serversvc.New(serversvc.Dependencies{StoreDB: fake, Config: cfg}),
-			Agent:    agentsvc.New(agentsvc.Dependencies{StoreDB: fake, Config: cfg}),
-			Skill:    skillRegistry,
-			Asset:    assetsvc.New(assetsvc.Dependencies{Skills: skillRegistry, Packages: packageStore}),
-			Prompt:   promptsvc.New(promptsvc.Dependencies{StoreDB: fake}),
-			Provider: providerRegistry,
-			Deployment: deploymentsvc.New(deploymentsvc.Dependencies{
-				StoreDB:            fake,
-				Providers:          providerRegistry,
-				DeploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{"local": deploymentAdapter},
-			}),
+			Server: serversvc.New(serversvc.Dependencies{StoreDB: fake, Config: cfg}),
+			Agent:  agentsvc.New(agentsvc.Dependencies{StoreDB: fake, Config: cfg}),
+			Skill:  skillRegistry,
+			Asset:  assetsvc.New(assetsvc.Dependencies{Skills: skillRegistry, Packages: packageStore}),
+			Prompt: promptsvc.New(promptsvc.Dependencies{StoreDB: fake}),
 		},
 		mux,
 		metrics,
 		versionInfo,
 		nil,
 		nil,
-		routeOpts,
+		nil,
 	)
 	server := httptest.NewServer(mux)
 
@@ -1307,38 +1020,4 @@ shub:
 		t.Fatalf("BuildPackage() failed: %v", err)
 	}
 	return archivePath
-}
-
-type testProviderAdapter struct {
-	provider *models.Provider
-}
-
-func (a *testProviderAdapter) Platform() string {
-	return "local"
-}
-
-func (a *testProviderAdapter) ListProviders(_ context.Context) ([]*models.Provider, error) {
-	if a.provider == nil {
-		return []*models.Provider{}, nil
-	}
-	return []*models.Provider{a.provider}, nil
-}
-
-func (a *testProviderAdapter) CreateProvider(_ context.Context, _ *models.CreateProviderInput) (*models.Provider, error) {
-	return nil, errors.New("not implemented in test provider adapter")
-}
-
-func (a *testProviderAdapter) GetProvider(_ context.Context, providerID string) (*models.Provider, error) {
-	if a.provider != nil && a.provider.ID == providerID {
-		return a.provider, nil
-	}
-	return nil, database.ErrNotFound
-}
-
-func (a *testProviderAdapter) UpdateProvider(_ context.Context, _ string, _ *models.UpdateProviderInput) (*models.Provider, error) {
-	return nil, errors.New("not implemented in test provider adapter")
-}
-
-func (a *testProviderAdapter) DeleteProvider(_ context.Context, _ string) error {
-	return errors.New("not implemented in test provider adapter")
 }

@@ -17,9 +17,7 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/config"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/database"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
-	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	promptsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/prompt"
-	providersvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/provider"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	skillsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/skill"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/telemetry"
@@ -43,8 +41,6 @@ func TestCORSHeaders(t *testing.T) {
 	agentService := agentsvc.New(agentsvc.Dependencies{StoreDB: db, Config: cfg})
 	skillService := skillsvc.New(skillsvc.Dependencies{StoreDB: db})
 	promptService := promptsvc.New(promptsvc.Dependencies{StoreDB: db})
-	providerService := providersvc.New(providersvc.Dependencies{StoreDB: db})
-	deploymentService := deploymentsvc.New(deploymentsvc.Dependencies{StoreDB: db})
 
 	shutdownTelemetry, metrics, err := telemetry.InitMetrics("test")
 	require.NoError(t, err)
@@ -58,12 +54,10 @@ func TestCORSHeaders(t *testing.T) {
 
 	// Create server
 	_ = api.NewServer(cfg, router.RegistryServices{
-		Server:     serverService,
-		Agent:      agentService,
-		Skill:      skillService,
-		Prompt:     promptService,
-		Provider:   providerService,
-		Deployment: deploymentService,
+		Server: serverService,
+		Agent:  agentService,
+		Skill:  skillService,
+		Prompt: promptService,
 	}, metrics, versionInfo, nil, nil, nil)
 
 	tests := []struct {
@@ -169,8 +163,6 @@ func TestCORSHeaderValues(t *testing.T) {
 	agentService := agentsvc.New(agentsvc.Dependencies{StoreDB: db, Config: cfg})
 	skillService := skillsvc.New(skillsvc.Dependencies{StoreDB: db})
 	promptService := promptsvc.New(promptsvc.Dependencies{StoreDB: db})
-	providerService := providersvc.New(providersvc.Dependencies{StoreDB: db})
-	deploymentService := deploymentsvc.New(deploymentsvc.Dependencies{StoreDB: db})
 
 	shutdownTelemetry, metrics, err := telemetry.InitMetrics("test")
 	require.NoError(t, err)
@@ -184,12 +176,10 @@ func TestCORSHeaderValues(t *testing.T) {
 
 	// Create server
 	_ = api.NewServer(cfg, router.RegistryServices{
-		Server:     serverService,
-		Agent:      agentService,
-		Skill:      skillService,
-		Prompt:     promptService,
-		Provider:   providerService,
-		Deployment: deploymentService,
+		Server: serverService,
+		Agent:  agentService,
+		Skill:  skillService,
+		Prompt: promptService,
 	}, metrics, versionInfo, nil, nil, nil)
 
 	// Test that CORS is configured with correct values

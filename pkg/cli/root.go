@@ -13,7 +13,6 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/cli/configure"
 	clidaemon "github.com/agentregistry-dev/agentregistry/internal/cli/daemon"
 	"github.com/agentregistry-dev/agentregistry/internal/cli/declarative"
-	"github.com/agentregistry-dev/agentregistry/internal/cli/deployment"
 	"github.com/agentregistry-dev/agentregistry/internal/cli/mcp"
 	"github.com/agentregistry-dev/agentregistry/internal/cli/prompt"
 	"github.com/agentregistry-dev/agentregistry/internal/cli/shub"
@@ -87,7 +86,6 @@ var rootCmd = &cobra.Command{
 		skill.SetAPIClient(c)
 		shub.SetAPIClient(c)
 		prompt.SetAPIClient(c)
-		deployment.SetAPIClient(c)
 		cli.SetAPIClient(c)
 		declarative.SetAPIClient(c)
 		return nil
@@ -110,7 +108,6 @@ func init() {
 	rootCmd.AddCommand(cli.ImportCmd)
 	rootCmd.AddCommand(cli.ExportCmd)
 	rootCmd.AddCommand(cli.EmbeddingsCmd)
-	rootCmd.AddCommand(deployment.DeploymentCmd)
 	rootCmd.AddCommand(clidaemon.New(dockercompose.NewManager(dockercompose.DefaultConfig())))
 	rootCmd.AddCommand(declarative.ApplyCmd)
 	rootCmd.AddCommand(declarative.GetCmd)

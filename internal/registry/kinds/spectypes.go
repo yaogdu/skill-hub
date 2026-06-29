@@ -1,11 +1,9 @@
 // spectypes.go defines the typed spec: blocks for all declarative document kinds.
 // Each spec struct carries yaml + json tags so that YAML decode and JSON
 // round-trip both work with identical field names. These replace the per-kind
-// sub-packages (agent/, skill/, prompt/, mcp/, provider/, deployment/) that
-// were previously under this directory.
+// sub-packages (agent/, skill/, prompt/, mcp/) that were previously under this
+// directory.
 package kinds
-
-import "github.com/agentregistry-dev/agentregistry/pkg/models"
 
 // ---------------------------------------------------------------------------
 // Agent
@@ -235,28 +233,4 @@ type MCPKeyValueInput struct {
 	Placeholder string                      `yaml:"placeholder,omitempty" json:"placeholder,omitempty"`
 	Choices     []string                    `yaml:"choices,omitempty" json:"choices,omitempty"`
 	Variables   map[string]MCPInputVariable `yaml:"variables,omitempty" json:"variables,omitempty"`
-}
-
-// ---------------------------------------------------------------------------
-// Provider
-// ---------------------------------------------------------------------------
-
-// ProviderSpec is the typed spec: block for a kind: provider declarative document.
-// Platform is the discriminator; Config is a generic map for platform-specific fields.
-type ProviderSpec struct {
-	Platform string         `yaml:"platform" json:"platform"`
-	Config   map[string]any `yaml:"config,omitempty" json:"config,omitempty"`
-}
-
-// ---------------------------------------------------------------------------
-// Deployment
-// ---------------------------------------------------------------------------
-
-// DeploymentSpec is the typed spec: block for a kind: deployment declarative document.
-type DeploymentSpec struct {
-	ProviderID     string            `yaml:"providerId" json:"providerId"`
-	ResourceType   string            `yaml:"resourceType" json:"resourceType"` // "agent" | "mcp" (also accepts "server" as alias for "mcp")
-	Env            map[string]string `yaml:"env,omitempty" json:"env,omitempty"`
-	ProviderConfig models.JSONObject `yaml:"providerConfig,omitempty" json:"providerConfig,omitempty"`
-	PreferRemote   bool              `yaml:"preferRemote,omitempty" json:"preferRemote,omitempty"`
 }

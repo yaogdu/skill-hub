@@ -32,7 +32,7 @@
 
 `skill-hub` 是一个面向 MCP Server、AI Agent、Skill、Prompt 的统一注册中心与分发中心，重点服务于团队内部沉淀、私有化部署、统一治理和标准化消费。
 
-本项目是基于上游 [`agentregistry`](https://github.com/agentregistry-dev/agentregistry) 的二次开发开源分支。我们保留了它在 registry、CLI、部署、Web UI 方面的核心能力，同时把产品形态进一步收敛到更适合企业内部场景的方向：
+本项目是基于上游 [`agentregistry`](https://github.com/agentregistry-dev/agentregistry) 的二次开发开源分支。我们保留了它在 registry、CLI、Web UI 方面的核心能力，同时把产品形态进一步收敛到更适合企业内部资产治理和分发的方向：
 
 - 自托管 / 私有化部署优先
 - 面向 skill 分发和 SHUB 工作流优化
@@ -68,7 +68,7 @@
 
 本项目不是从零重写，而是基于 `agentregistry` 进行二开，目标是：
 
-- 保留其原有 registry / CLI / Web UI / 部署模型
+- 保留其原有 registry / CLI / Web UI 基础能力
 - 在用户体验上更聚焦于 Skill Hub 场景
 - 更适合公司内部私有化、自托管和权限治理
 
@@ -122,6 +122,7 @@
 
 ```bash
 arctl shub lint ./skills/ai-agent-learning-system
+arctl shub resolve ./skills/ai-agent-learning-system
 arctl shub package ./skills/ai-agent-learning-system
 arctl shub deploy ./dist/ai-agent-learning-system-1.0.0.tar.gz
 
@@ -129,6 +130,10 @@ npx @yaogdu-skill-hub/shub search ai-agent
 npx @yaogdu-skill-hub/shub add yaogdu/ai-agent-learning-system
 npx @yaogdu-skill-hub/shub use yaogdu/ai-agent-learning-system@1.0.0
 ```
+
+Agent 或 Skill 可以在 `SKILL.md` 的 `shub.dependencies` 中声明固定版本依赖，例如 Prompt、MCP Server 或其他 Skill。`arctl shub resolve ./asset-dir` 会基于当前配置的 registry 把这些 `asset-id@version` 解析成 `shub.lock`，CI 中可以使用 `arctl shub resolve ./asset-dir --check` 检查 lockfile 是否过期。依赖声明里不内嵌 registry 地址或用户名密码；解析时复用 CLI 的 `--registry-url` / `ARCTL_API_BASE_URL` / `SHUB_API_BASE_URL` 以及 `--registry-token` / `ARCTL_API_TOKEN` / `SHUB_API_TOKEN`。
+
+这里的 `arctl shub deploy` 是历史兼容命名，本质是把 SHUB 包发布到 registry，并不会把 MCP Server 或 Agent 部署到 Docker / Kubernetes。
 
 ### 3. 远端回源与镜像入库
 
@@ -166,7 +171,7 @@ CLI 和 npm wrapper 都支持通过环境变量读取 API Key。
 
 ### 5. 私有化部署友好
 
-当前项目对私有化部署做了明确支持：
+当前项目对部署 skill-hub 服务本身做了明确支持：
 
 - 支持 Docker Compose 启动
 - 支持 Helm / Kubernetes 部署
@@ -174,6 +179,8 @@ CLI 和 npm wrapper 都支持通过环境变量读取 API Key。
 - fallback source 可配置
 - 是否启用匿名读取 / API Key 校验可配置
 - 适合作为团队内部基础设施长期运行
+
+skill-hub 不负责运行时部署 MCP Server 或 Agent。运行、流量路由、灰度发布和环境编排应该交给企业已有的 CI/CD、Kubernetes、IDE MCP 配置、agentgateway 或其他运行时平台；skill-hub 负责资产发布、版本解析、包存储、权限治理和客户端配置导出。
 
 ---
 

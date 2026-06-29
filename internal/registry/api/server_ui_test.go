@@ -10,14 +10,14 @@ import (
 
 // testUIFS simulates the Next.js static export layout:
 //   - index.html         root page
-//   - deployed.html      page route (Next.js writes /deployed -> deployed.html)
-//   - deployed/          directory of internal Next.js route metadata files
+//   - catalog.html       page route (Next.js writes /catalog -> catalog.html)
+//   - catalog/           directory of internal Next.js route metadata files
 //   - _next/static/...   hashed asset files
 var testUIFS = fstest.MapFS{
 	"index.html":                    {Data: []byte("<html>index</html>")},
-	"deployed.html":                 {Data: []byte("<html>deployed</html>")},
-	"deployed/__next._full.txt":     {Data: []byte("internal")},
-	"deployed/__next._index.txt":    {Data: []byte("internal")},
+	"catalog.html":                  {Data: []byte("<html>catalog</html>")},
+	"catalog/__next._full.txt":      {Data: []byte("internal")},
+	"catalog/__next._index.txt":     {Data: []byte("internal")},
 	"_next/static/chunk.abc123.js":  {Data: []byte("console.log('chunk')")},
 	"_next/static/style.abc123.css": {Data: []byte("body{}")},
 }
@@ -44,16 +44,16 @@ func TestNewUIHandler(t *testing.T) {
 		},
 		{
 			name:             "page route maps to .html file",
-			path:             "/deployed",
+			path:             "/catalog",
 			wantStatus:       http.StatusOK,
-			wantBodyContains: "<html>deployed</html>",
+			wantBodyContains: "<html>catalog</html>",
 			wantCacheControl: "no-store",
 		},
 		{
 			name:             "trailing slash on page route resolves same as without",
-			path:             "/deployed/",
+			path:             "/catalog/",
 			wantStatus:       http.StatusOK,
-			wantBodyContains: "<html>deployed</html>",
+			wantBodyContains: "<html>catalog</html>",
 			wantCacheControl: "no-store",
 		},
 		{
@@ -65,7 +65,7 @@ func TestNewUIHandler(t *testing.T) {
 		},
 		{
 			name:             "route metadata disables caching",
-			path:             "/deployed/__next._full.txt",
+			path:             "/catalog/__next._full.txt",
 			wantStatus:       http.StatusOK,
 			wantBodyContains: "internal",
 			wantCacheControl: "no-store",

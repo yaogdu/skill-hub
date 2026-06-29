@@ -9,7 +9,6 @@ import (
 
 	apitypes "github.com/agentregistry-dev/agentregistry/internal/registry/api/apitypes"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
-	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	skillsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/skill"
 	"github.com/agentregistry-dev/agentregistry/internal/version"
@@ -24,9 +23,9 @@ const (
 	maxPageLimit     = 100
 )
 
-// NewServer constructs an MCP server that exposes discovery and deployment tools backed by focused registry contracts.
+// NewServer constructs an MCP server that exposes discovery tools backed by focused registry contracts.
 // All endpoints are restricted to published content to keep the surface area safe for unauthenticated agents.
-func NewServer(serverRegistry serversvc.Registry, agentRegistry agentsvc.Registry, skillRegistry skillsvc.Registry, deploymentRegistry deploymentsvc.Registry) *mcp.Server {
+func NewServer(serverRegistry serversvc.Registry, agentRegistry agentsvc.Registry, skillRegistry skillsvc.Registry) *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "agentregistry-mcp",
 		Version: version.Version,
@@ -38,7 +37,6 @@ func NewServer(serverRegistry serversvc.Registry, agentRegistry agentsvc.Registr
 	addAgentTools(server, agentRegistry)
 	addServerTools(server, serverRegistry)
 	addSkillTools(server, skillRegistry)
-	addDeploymentTools(server, deploymentRegistry)
 	addMetaTools(server)
 	addServerPrompts(server)
 
@@ -356,126 +354,6 @@ func addMetaTools(server *mcp.Server) {
 	})
 }
 
-type listDeploymentsArgs = apitypes.DeploymentsListInput
-
-type getDeploymentArgs struct {
-	ID string `json:"id"`
-}
-
-type deployToolArgs struct {
-	ServerName   string            `json:"serverName" required:"true"`
-	Version      string            `json:"version" required:"true"`
-	Env          map[string]string `json:"env,omitempty"`
-	PreferRemote bool              `json:"preferRemote,omitempty"`
-	ProviderID   string            `json:"providerId,omitempty"`
-}
-
-type deploymentsResponse struct {
-	Deployments []models.Deployment `json:"deployments"`
-	Count       int                 `json:"count"`
-}
-
-func addDeploymentTools(server *mcp.Server, registry deploymentsvc.Registry) {
-	// List deployments
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "list_deployments",
-		Description: "List deployments (servers or agents)",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, args listDeploymentsArgs) (*mcp.CallToolResult, deploymentsResponse, error) {
-		deployments, err := registry.ListDeployments(ctx, nil)
-		if err != nil {
-			return nil, deploymentsResponse{}, err
-		}
-		resp := deploymentsResponse{
-			Deployments: make([]models.Deployment, len(deployments)),
-			Count:       len(deployments),
-		}
-		outIdx := 0
-		for _, d := range deployments {
-			if args.ResourceType != "" && d.ResourceType != args.ResourceType {
-				continue
-			}
-			resp.Deployments[outIdx] = *d
-			outIdx++
-		}
-		resp.Deployments = resp.Deployments[:outIdx]
-		resp.Count = outIdx
-		return nil, resp, nil
-	})
-
-	// Get deployment
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "get_deployment",
-		Description: "Get a deployment by ID",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, args getDeploymentArgs) (*mcp.CallToolResult, models.Deployment, error) {
-		if args.ID == "" {
-			return nil, models.Deployment{}, errors.New("id is required")
-		}
-		deployment, err := registry.GetDeployment(ctx, args.ID)
-		if err != nil {
-			return nil, models.Deployment{}, err
-		}
-		return nil, *deployment, nil
-	})
-
-	// Deploy server
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "deploy_server",
-		Description: "Deploy a server by name/version with optional config",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, args deployToolArgs) (*mcp.CallToolResult, models.Deployment, error) {
-		if args.ServerName == "" || args.Version == "" {
-			return nil, models.Deployment{}, errors.New("name and version are required")
-		}
-
-		providerID := args.ProviderID
-		if providerID == "" {
-			providerID = "local"
-		}
-		deployment, err := registry.DeployServer(ctx, args.ServerName, args.Version, args.Env, args.PreferRemote, providerID)
-		if err != nil {
-			return nil, models.Deployment{}, err
-		}
-		return nil, *deployment, nil
-	})
-
-	// Deploy agent
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "deploy_agent",
-		Description: "Deploy an agent by name/version with optional config",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, args deployToolArgs) (*mcp.CallToolResult, models.Deployment, error) {
-		if args.ServerName == "" || args.Version == "" {
-			return nil, models.Deployment{}, errors.New("name and version are required")
-		}
-
-		providerID := args.ProviderID
-		if providerID == "" {
-			providerID = "local"
-		}
-		deployment, err := registry.DeployAgent(ctx, args.ServerName, args.Version, args.Env, args.PreferRemote, providerID)
-		if err != nil {
-			return nil, models.Deployment{}, err
-		}
-		return nil, *deployment, nil
-	})
-
-	// Remove deployment
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "remove_deployment",
-		Description: "Remove a deployment by ID",
-	}, func(ctx context.Context, _ *mcp.CallToolRequest, args getDeploymentArgs) (*mcp.CallToolResult, map[string]string, error) {
-		if args.ID == "" {
-			return nil, nil, errors.New("id is required")
-		}
-		deployment, err := registry.GetDeployment(ctx, args.ID)
-		if err != nil {
-			return nil, nil, err
-		}
-		if err := registry.UndeployDeployment(ctx, deployment); err != nil {
-			return nil, nil, err
-		}
-		return nil, map[string]string{"status": "deleted"}, nil
-	})
-}
-
 // ServerReadmePayload is a compact representation of a server README blob.
 type ServerReadmePayload struct {
 	Server      string    `json:"server"`
@@ -546,32 +424,6 @@ func addServerPrompts(server *mcp.Server) {
 	})
 
 	server.AddPrompt(&mcp.Prompt{
-		Name:        "deploy_mcp_server",
-		Description: "Deploy an MCP server from the registry",
-		Arguments: []*mcp.PromptArgument{
-			{Name: "name", Description: "Name of the MCP server to deploy", Required: true},
-			{Name: "version", Description: "Version to deploy (default: latest)"},
-		},
-	}, func(_ context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-		name := req.Params.Arguments["name"]
-		ver := req.Params.Arguments["version"]
-		if ver == "" {
-			ver = "latest"
-		}
-
-		return &mcp.GetPromptResult{
-			Description: "Deploy an MCP server from the registry",
-			Messages: []*mcp.PromptMessage{
-				{Role: "user", Content: &mcp.TextContent{
-					Text: "Deploy the MCP server \"" + name + "\" (version: " + ver + ") from the registry. " +
-						"First use get_server to look up the server details, then use deploy_server to deploy it. " +
-						"Show me the deployment status when done.",
-				}},
-			},
-		}, nil
-	})
-
-	server.AddPrompt(&mcp.Prompt{
 		Name:        "registry_overview",
 		Description: "Get an overview of everything available in the agent registry",
 	}, func(_ context.Context, _ *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
@@ -581,7 +433,6 @@ func addServerPrompts(server *mcp.Server) {
 				{Role: "user", Content: &mcp.TextContent{
 					Text: "Give me an overview of what's available in the agent registry. " +
 						"Use list_servers, list_agents, and list_skills to see what's published. " +
-						"Also check list_deployments to see what's currently deployed. " +
 						"Summarize the results in a clear table format showing name, description, and latest version for each resource type.",
 				}},
 			},

@@ -77,13 +77,6 @@ export const Minimal: Story = {
   },
 }
 
-export const WithDeploy: Story = {
-  args: {
-    server: mockServer,
-    showDeploy: true,
-  },
-}
-
 export const WithDelete: Story = {
   args: {
     server: mockServer,

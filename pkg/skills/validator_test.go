@@ -67,6 +67,12 @@ shub:
       strategy: uv
       path: pyproject.toml
       lockfile: uv.lock
+  dependencies:
+    prompts:
+      - security/code-review@1.2.0
+    mcps:
+      - id: infra/k8s-readonly
+        version: 0.8.3
   exports:
     - target: codex
       mode: prompt-file
@@ -81,6 +87,12 @@ shub:
 	}
 	if asset.Manifest.Runtime.Install == nil || asset.Manifest.Runtime.Install.Path != "pyproject.toml" {
 		t.Fatalf("runtime install path not preserved: %+v", asset.Manifest.Runtime.Install)
+	}
+	if got := asset.Manifest.Dependencies.Prompts[0]; got.ID != "security/code-review" || got.Version != "1.2.0" {
+		t.Fatalf("prompt dependency = %+v, want security/code-review@1.2.0", got)
+	}
+	if got := asset.Manifest.Dependencies.MCPs[0]; got.ID != "infra/k8s-readonly" || got.Version != "0.8.3" {
+		t.Fatalf("mcp dependency = %+v, want infra/k8s-readonly@0.8.3", got)
 	}
 }
 
@@ -146,6 +158,32 @@ version: 1.0.0
 # Legacy
 `,
 			errContains: "missing required field: shub.schemaVersion",
+		},
+		{
+			name: "duplicate dependency reference",
+			skill: `---
+name: bad-deps
+description: Duplicate deps
+version: 1.0.0
+shub:
+  schemaVersion: shub.skill/v1alpha1
+  id: local/bad-deps
+  category: agent
+  entry:
+    kind: command
+    path: bin/main.py
+  runtime:
+    type: none
+  dependencies:
+    prompts:
+      - security/code-review@1.2.0
+    skills:
+      - security/code-review@1.2.0
+---
+# Bad Deps
+`,
+			files:       map[string]string{"bin/main.py": "print('ok')\n"},
+			errContains: "duplicate dependency reference",
 		},
 	}
 

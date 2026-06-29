@@ -3,12 +3,9 @@ package mcp
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
-	cliCommon "github.com/agentregistry-dev/agentregistry/internal/cli/common"
-	"github.com/agentregistry-dev/agentregistry/internal/client"
 	"github.com/agentregistry-dev/agentregistry/pkg/printer"
 	v0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 	"github.com/spf13/cobra"
@@ -47,12 +44,6 @@ func runList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get servers: %w", err)
 	}
 
-	deployedServers, err := apiClient.GetDeployedServers()
-	if err != nil {
-		log.Printf("Warning: Failed to get deployed servers: %v", err)
-		deployedServers = nil
-	}
-
 	// Filter by type if specified
 	if filterType != "" {
 		servers = filterServersByType(servers, filterType)
@@ -74,20 +65,20 @@ func runList(cmd *cobra.Command, args []string) error {
 	case "yaml":
 		return outputDataYaml(servers)
 	default:
-		displayPaginatedServers(servers, deployedServers, listPageSize, listAll)
+		displayPaginatedServers(servers, listPageSize, listAll)
 	}
 
 	return nil
 }
 
-func displayPaginatedServers(servers []*v0.ServerResponse, deployedServers []*client.DeploymentResponse, pageSize int, showAll bool) {
+func displayPaginatedServers(servers []*v0.ServerResponse, pageSize int, showAll bool) {
 	// Sort servers before displaying
 	sortServers(servers, sortBy)
 	total := len(servers)
 
 	if showAll || total <= pageSize {
 		// Show all items
-		printServersTable(servers, deployedServers)
+		printServersTable(servers)
 		return
 	}
 
@@ -99,7 +90,7 @@ func displayPaginatedServers(servers []*v0.ServerResponse, deployedServers []*cl
 		end := min(start+pageSize, total)
 
 		// Display current page
-		printServersTable(servers[start:end], deployedServers)
+		printServersTable(servers[start:end])
 
 		// Check if there are more items
 		remaining := total - end
@@ -119,7 +110,7 @@ func displayPaginatedServers(servers []*v0.ServerResponse, deployedServers []*cl
 			case "a", "all":
 				// Show all remaining
 				fmt.Println()
-				printServersTable(servers[end:], deployedServers)
+				printServersTable(servers[end:])
 				return
 			case "q", "quit":
 				// Quit pagination
@@ -208,11 +199,9 @@ func sortServers(servers []*v0.ServerResponse, column string) {
 	}
 }
 
-func printServersTable(servers []*v0.ServerResponse, deployedServers []*client.DeploymentResponse) {
+func printServersTable(servers []*v0.ServerResponse) {
 	t := printer.NewTablePrinter(os.Stdout)
-	t.SetHeaders("Name", "Version", "Type", "Package", "Deployed", "Updated")
-
-	deploymentCounts := cliCommon.BuildDeploymentCounts(deployedServers, "mcp")
+	t.SetHeaders("Name", "Version", "Type", "Package", "Updated")
 
 	for _, s := range servers {
 		registryType := "<none>"
@@ -232,14 +221,11 @@ func printServersTable(servers []*v0.ServerResponse, deployedServers []*client.D
 
 		fullName := s.Server.Name
 
-		deployedStatus := cliCommon.DeployedStatus(deploymentCounts, s.Server.Name, s.Server.Version, false)
-
 		t.AddRow(
 			printer.TruncateString(fullName, 50),
 			s.Server.Version,
 			registryType,
 			printer.TruncateString(printer.EmptyValueOrDefault(packageID, "<none>"), 50),
-			deployedStatus,
 			updatedAt,
 		)
 	}

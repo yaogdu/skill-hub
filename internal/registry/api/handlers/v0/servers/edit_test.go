@@ -20,7 +20,6 @@ import (
 	v0servers "github.com/agentregistry-dev/agentregistry/internal/registry/api/handlers/v0/servers"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/config"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/database"
-	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
@@ -42,7 +41,6 @@ func TestEditServerEndpoint(t *testing.T) {
 	// Create registry service and test data
 	storeDB := database.NewTestDB(t)
 	serverService := serversvc.New(serversvc.Dependencies{StoreDB: storeDB, Config: cfg})
-	deploymentService := deploymentsvc.New(deploymentsvc.Dependencies{StoreDB: storeDB})
 
 	// Create authorizer
 	jwtManager := auth.NewJWTManager(cfg)
@@ -383,7 +381,7 @@ func TestEditServerEndpoint(t *testing.T) {
 			api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
 
 			// Register edit endpoints
-			v0servers.RegisterEditEndpoints(api, "/v0", serverService, deploymentService)
+			v0servers.RegisterEditEndpoints(api, "/v0", serverService)
 
 			// Create request body
 			requestBody, err := json.Marshal(tc.requestBody)
@@ -451,7 +449,6 @@ func TestEditServerEndpointEdgeCases(t *testing.T) {
 	// Create registry service
 	storeDB := database.NewTestDB(t)
 	serverService := serversvc.New(serversvc.Dependencies{StoreDB: storeDB, Config: cfg})
-	deploymentService := deploymentsvc.New(deploymentsvc.Dependencies{StoreDB: storeDB})
 
 	// Setup test servers with different characteristics
 	testServers := []struct {
@@ -490,7 +487,7 @@ func TestEditServerEndpointEdgeCases(t *testing.T) {
 	// Create API
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterEditEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterEditEndpoints(api, "/v0", serverService)
 
 	t.Run("status transitions", func(t *testing.T) {
 		tests := []struct {

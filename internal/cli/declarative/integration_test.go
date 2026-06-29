@@ -48,12 +48,10 @@ func newTestServer(t *testing.T, fake *servicetesting.FakeRegistry) (*client.Cli
 	}
 
 	svcs := router.RegistryServices{
-		Agent:      fake,
-		Server:     fake,
-		Skill:      fake,
-		Prompt:     fake,
-		Provider:   fake,
-		Deployment: fake,
+		Agent:  fake,
+		Server: fake,
+		Skill:  fake,
+		Prompt: fake,
 	}
 	router.NewHumaAPI(cfg, svcs, mux, metrics, versionInfo, nil, nil, nil)
 	server := httptest.NewServer(mux)
@@ -341,8 +339,8 @@ func TestDeleteIntegration_MissingVersion(t *testing.T) {
 	defer cleanup()
 	declarative.SetAPIClient(c)
 
-	// Version is optional at the CLI level (providers don't use it).
-	// For agents, the server returns a 404 when version is empty.
+	// Version is optional at the CLI level; the server returns a 404 when
+	// an agent version is empty.
 	cmd := declarative.NewDeleteCmd()
 	cmd.SetArgs([]string{"agent", "acme/bot"}) // no --version
 	err := cmd.Execute()

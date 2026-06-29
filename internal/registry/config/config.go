@@ -28,10 +28,9 @@ type Config struct {
 	EnableRegistryValidation bool   `env:"ENABLE_REGISTRY_VALIDATION" envDefault:"true"`
 	LogLevel                 string `env:"LOG_LEVEL" envDefault:"info"`
 
-	// Platform mode: "docker" or "kubernetes". Controls which deployment
-	// provider IDs are available in the UI. Defaults to "kubernetes" so
-	// Helm/K8s deployments work without extra config; docker-compose.yml
-	// explicitly sets this to "docker".
+	// Platform mode is kept for installation compatibility with existing
+	// docker-compose and Helm values. Runtime deployment providers are no
+	// longer exposed by the registry application.
 	PlatformMode string `env:"PLATFORM_MODE" envDefault:"kubernetes"`
 
 	// Agent Gateway Configuration

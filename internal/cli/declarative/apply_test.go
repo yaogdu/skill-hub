@@ -95,7 +95,7 @@ func TestApplyPostsToBatchEndpoint(t *testing.T) {
 func TestApplyPrintsPerResourceStatus(t *testing.T) {
 	results := []kinds.Result{
 		{Kind: "agent", Name: "a", Version: "1.0", Status: kinds.StatusApplied},
-		{Kind: "deployment", Name: "x", Status: kinds.StatusFailed, Error: "drift detected"},
+		{Kind: "prompt", Name: "x", Status: kinds.StatusFailed, Error: "validation failed"},
 	}
 	srv, _ := newApplyTestServer(t, results)
 	setupApplyClient(t, srv)
@@ -111,7 +111,7 @@ func TestApplyPrintsPerResourceStatus(t *testing.T) {
 
 	output := out.String()
 	assert.Contains(t, output, "✓ agent/a")
-	assert.Contains(t, output, "✗ deployment/x")
+	assert.Contains(t, output, "✗ prompt/x")
 }
 
 // TestApplyForceFlagThreads verifies that --force sets ?force=true on the request.

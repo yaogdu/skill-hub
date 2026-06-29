@@ -10,7 +10,6 @@ import (
 	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 )
 
@@ -283,7 +282,7 @@ func (f *FakeRegistry) ApplyProvider(_ context.Context, _, _ string, _ *models.U
 	return nil, ErrNotFound
 }
 
-func (f *FakeRegistry) PlatformAdapters() map[string]registrytypes.ProviderPlatformAdapter {
+func (f *FakeRegistry) PlatformAdapters() map[string]platformtypes.ProviderAdapter {
 	return nil
 }
 

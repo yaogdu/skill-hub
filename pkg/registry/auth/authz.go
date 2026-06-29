@@ -55,7 +55,6 @@ var allPublicActions = []PermissionAction{
 	PermissionActionPublish,
 	PermissionActionEdit,
 	PermissionActionDelete,
-	PermissionActionDeploy,
 }
 
 // PublicAuthzProvider implements AuthzProvider for the public version.

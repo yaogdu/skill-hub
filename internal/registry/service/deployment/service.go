@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"strings"
 
+	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/service/internal/deployutil"
 	providersvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/provider"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 )
 
 const (
@@ -33,10 +33,10 @@ type Dependencies struct {
 	StoreDB            database.Store
 	Deployments        database.DeploymentStore
 	Providers          providersvc.Registry
-	ProviderPlatforms  map[string]registrytypes.ProviderPlatformAdapter
+	ProviderPlatforms  map[string]platformtypes.ProviderAdapter
 	Servers            serversvc.Registry
 	Agents             agentsvc.Registry
-	DeploymentAdapters map[string]registrytypes.DeploymentPlatformAdapter
+	DeploymentAdapters map[string]platformtypes.DeploymentAdapter
 }
 
 type Registry interface {
@@ -65,7 +65,7 @@ type registry struct {
 	providers   providersvc.Registry
 	servers     serversvc.Registry
 	agents      agentsvc.Registry
-	adapters    map[string]registrytypes.DeploymentPlatformAdapter
+	adapters    map[string]platformtypes.DeploymentAdapter
 	tx          database.Transactor
 }
 
@@ -90,7 +90,7 @@ func New(deps Dependencies) Registry {
 
 	adapters := deps.DeploymentAdapters
 	if adapters == nil {
-		adapters = map[string]registrytypes.DeploymentPlatformAdapter{}
+		adapters = map[string]platformtypes.DeploymentAdapter{}
 	}
 
 	return &registry{

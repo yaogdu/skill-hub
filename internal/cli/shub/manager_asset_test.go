@@ -446,7 +446,14 @@ func TestManagerDoctorRepairsMissingInstallDirFromAssetRegistry(t *testing.T) {
 
 func assetRegistryResponse(asset *models.Asset, packageURL string, updatedAt time.Time) *models.AssetResponse {
 	cloned := *asset
-	cloned.Source = &models.AssetSource{PackageType: "tarball", PackageRef: packageURL}
+	if cloned.Source == nil {
+		cloned.Source = &models.AssetSource{}
+	} else {
+		source := *cloned.Source
+		cloned.Source = &source
+	}
+	cloned.Source.PackageType = "tarball"
+	cloned.Source.PackageRef = packageURL
 	return &models.AssetResponse{
 		Asset: cloned,
 		Meta: models.AssetResponseMeta{Official: &models.AssetRegistryExtensions{

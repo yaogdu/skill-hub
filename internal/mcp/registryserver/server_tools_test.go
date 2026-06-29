@@ -14,7 +14,6 @@ import (
 	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 	"github.com/modelcontextprotocol/registry/pkg/model"
@@ -425,14 +424,14 @@ func (h *fakeMCPDeploymentHarness) DeployAgent(ctx context.Context, agentName, v
 	})
 }
 
-func (h *fakeMCPDeploymentHarness) ResolveDeploymentAdapter(platform string) (registrytypes.DeploymentPlatformAdapter, error) {
+func (h *fakeMCPDeploymentHarness) ResolveDeploymentAdapter(platform string) (platformtypes.DeploymentAdapter, error) {
 	if platform != "" && platform != "local" {
 		return nil, fmt.Errorf("unsupported platform %q", platform)
 	}
 	return h, nil
 }
 
-func (h *fakeMCPDeploymentHarness) ResolveDeploymentAdapterByProviderID(context.Context, string) (registrytypes.DeploymentPlatformAdapter, error) {
+func (h *fakeMCPDeploymentHarness) ResolveDeploymentAdapterByProviderID(context.Context, string) (platformtypes.DeploymentAdapter, error) {
 	return h, nil
 }
 
@@ -562,12 +561,10 @@ func (h *fakeMCPDeploymentHarness) Discover(context.Context, string) ([]*models.
 }
 
 func newTestMCPServer(reg *fakeMCPRegistry) *mcp.Server {
-	deploymentHarness := newFakeMCPDeploymentHarness(reg)
 	return NewServer(
 		reg,
 		reg,
 		reg,
-		deploymentHarness,
 	)
 }
 

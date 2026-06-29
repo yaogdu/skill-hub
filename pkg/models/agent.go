@@ -40,9 +40,8 @@ type AgentSemanticMeta struct {
 }
 
 type AgentResponseMeta struct {
-	Official    *AgentRegistryExtensions `json:"io.modelcontextprotocol.registry/official,omitempty"`
-	Semantic    *AgentSemanticMeta       `json:"aregistry.ai/semantic,omitempty"`
-	Deployments *ResourceDeploymentsMeta `json:"aregistry.ai/deployments,omitempty"`
+	Official *AgentRegistryExtensions `json:"io.modelcontextprotocol.registry/official,omitempty"`
+	Semantic *AgentSemanticMeta       `json:"aregistry.ai/semantic,omitempty"`
 }
 
 type AgentResponse struct {

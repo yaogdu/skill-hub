@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
+	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 )
 
 type providerAdapterBase struct {
@@ -74,8 +74,8 @@ type kubernetesProviderAdapter struct {
 	providerAdapterBase
 }
 
-func defaultPlatformAdapters(providers database.ProviderStore) map[string]registrytypes.ProviderPlatformAdapter {
-	return map[string]registrytypes.ProviderPlatformAdapter{
+func defaultPlatformAdapters(providers database.ProviderStore) map[string]platformtypes.ProviderAdapter {
+	return map[string]platformtypes.ProviderAdapter{
 		"local": &localProviderAdapter{
 			providerAdapterBase: providerAdapterBase{
 				providerPlatform: "local",

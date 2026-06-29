@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shub.local/schema/shub-lock.schema.json",
+  "title": "SHUB Lockfile",
+  "description": "Resolved SHUB dependency lockfile written by `shub resolve`. It records exact asset versions and package/source digests used for reproducible builds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lockfileVersion",
+    "asset",
+    "generatedAt",
+    "resolvedAssets"
+  ],
+  "properties": {
+    "lockfileVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "asset": {
+      "$ref": "#/$defs/rootAsset"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolvedAssets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/resolvedAsset"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "rootAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "category"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        }
+      }
+    },
+    "resolvedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "category"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string"
+        },
+        "sourceCommit": {
+          "type": "string"
+        },
+        "packageRef": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

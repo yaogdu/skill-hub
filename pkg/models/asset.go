@@ -9,6 +9,7 @@ import (
 
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 	"github.com/modelcontextprotocol/registry/pkg/model"
+	yaml "gopkg.in/yaml.v3"
 )
 
 const (
@@ -71,19 +72,20 @@ type AssetSource struct {
 }
 
 type AssetManifest struct {
-	SchemaVersion string           `json:"schemaVersion" yaml:"schemaVersion"`
-	ID            string           `json:"id" yaml:"id"`
-	Category      AssetCategory    `json:"category" yaml:"category"`
-	Name          string           `json:"name" yaml:"name"`
-	Description   string           `json:"description" yaml:"description"`
-	Version       string           `json:"version" yaml:"version"`
-	AllowedTools  []string         `json:"allowedTools,omitempty" yaml:"allowedTools,omitempty"`
-	SourceSkill   AssetSourceSkill `json:"sourceSkill" yaml:"sourceSkill"`
-	Entry         AssetEntry       `json:"entry" yaml:"entry"`
-	Runtime       AssetRuntime     `json:"runtime" yaml:"runtime"`
-	Exports       []AssetExport    `json:"exports,omitempty" yaml:"exports,omitempty"`
-	Hooks         AssetHooks       `json:"hooks,omitempty" yaml:"hooks,omitempty"`
-	Metadata      map[string]any   `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	SchemaVersion string            `json:"schemaVersion" yaml:"schemaVersion"`
+	ID            string            `json:"id" yaml:"id"`
+	Category      AssetCategory     `json:"category" yaml:"category"`
+	Name          string            `json:"name" yaml:"name"`
+	Description   string            `json:"description" yaml:"description"`
+	Version       string            `json:"version" yaml:"version"`
+	AllowedTools  []string          `json:"allowedTools,omitempty" yaml:"allowedTools,omitempty"`
+	SourceSkill   AssetSourceSkill  `json:"sourceSkill" yaml:"sourceSkill"`
+	Entry         AssetEntry        `json:"entry" yaml:"entry"`
+	Runtime       AssetRuntime      `json:"runtime" yaml:"runtime"`
+	Dependencies  AssetDependencies `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	Exports       []AssetExport     `json:"exports,omitempty" yaml:"exports,omitempty"`
+	Hooks         AssetHooks        `json:"hooks,omitempty" yaml:"hooks,omitempty"`
+	Metadata      map[string]any    `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 }
 
 type AssetSourceSkill struct {
@@ -108,6 +110,71 @@ type AssetInstall struct {
 	Strategy string `json:"strategy" yaml:"strategy"`
 	Path     string `json:"path,omitempty" yaml:"path,omitempty"`
 	Lockfile string `json:"lockfile,omitempty" yaml:"lockfile,omitempty"`
+}
+
+type AssetDependencies struct {
+	Prompts []AssetDependencyRef `json:"prompts,omitempty" yaml:"prompts,omitempty"`
+	Skills  []AssetDependencyRef `json:"skills,omitempty" yaml:"skills,omitempty"`
+	MCPs    []AssetDependencyRef `json:"mcps,omitempty" yaml:"mcps,omitempty"`
+	Agents  []AssetDependencyRef `json:"agents,omitempty" yaml:"agents,omitempty"`
+}
+
+type AssetDependencyRef struct {
+	ID       string        `json:"id" yaml:"id"`
+	Version  string        `json:"version" yaml:"version"`
+	Category AssetCategory `json:"category,omitempty" yaml:"category,omitempty"`
+}
+
+func (ref *AssetDependencyRef) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == yaml.ScalarNode {
+		parsed, err := ParseAssetDependencyRef(value.Value)
+		if err != nil {
+			return err
+		}
+		*ref = parsed
+		return nil
+	}
+	type dependencyRef AssetDependencyRef
+	var decoded dependencyRef
+	if err := value.Decode(&decoded); err != nil {
+		return err
+	}
+	*ref = AssetDependencyRef(decoded)
+	return nil
+}
+
+func (ref *AssetDependencyRef) UnmarshalJSON(data []byte) error {
+	var raw string
+	if err := json.Unmarshal(data, &raw); err == nil {
+		parsed, err := ParseAssetDependencyRef(raw)
+		if err != nil {
+			return err
+		}
+		*ref = parsed
+		return nil
+	}
+	type dependencyRef AssetDependencyRef
+	var decoded dependencyRef
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*ref = AssetDependencyRef(decoded)
+	return nil
+}
+
+func ParseAssetDependencyRef(value string) (AssetDependencyRef, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return AssetDependencyRef{}, fmt.Errorf("dependency reference is empty")
+	}
+	id, version, ok := strings.Cut(trimmed, "@")
+	if !ok || strings.TrimSpace(id) == "" || strings.TrimSpace(version) == "" {
+		return AssetDependencyRef{}, fmt.Errorf("dependency reference %q must use <asset-id>@<version>", value)
+	}
+	if strings.Contains(version, "@") {
+		return AssetDependencyRef{}, fmt.Errorf("dependency reference %q has multiple @ separators", value)
+	}
+	return AssetDependencyRef{ID: strings.TrimSpace(id), Version: strings.TrimSpace(version)}, nil
 }
 
 type AssetExport struct {
@@ -243,14 +310,15 @@ type SkillFrontmatter struct {
 }
 
 type SkillFrontmatterShub struct {
-	SchemaVersion string         `json:"schemaVersion,omitempty" yaml:"schemaVersion,omitempty"`
-	ID            string         `json:"id,omitempty" yaml:"id,omitempty"`
-	Category      AssetCategory  `json:"category,omitempty" yaml:"category,omitempty"`
-	Entry         AssetEntry     `json:"entry,omitempty" yaml:"entry,omitempty"`
-	Runtime       AssetRuntime   `json:"runtime,omitempty" yaml:"runtime,omitempty"`
-	Exports       []AssetExport  `json:"exports,omitempty" yaml:"exports,omitempty"`
-	Hooks         AssetHooks     `json:"hooks,omitempty" yaml:"hooks,omitempty"`
-	Metadata      map[string]any `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	SchemaVersion string            `json:"schemaVersion,omitempty" yaml:"schemaVersion,omitempty"`
+	ID            string            `json:"id,omitempty" yaml:"id,omitempty"`
+	Category      AssetCategory     `json:"category,omitempty" yaml:"category,omitempty"`
+	Entry         AssetEntry        `json:"entry,omitempty" yaml:"entry,omitempty"`
+	Runtime       AssetRuntime      `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+	Dependencies  AssetDependencies `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	Exports       []AssetExport     `json:"exports,omitempty" yaml:"exports,omitempty"`
+	Hooks         AssetHooks        `json:"hooks,omitempty" yaml:"hooks,omitempty"`
+	Metadata      map[string]any    `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 }
 
 func (document SkillDocument) ToAssetManifest() (*AssetManifest, error) {
@@ -280,11 +348,12 @@ func (document SkillDocument) ToAssetManifest() (*AssetManifest, error) {
 			Body:       document.Body,
 			BodyFormat: "markdown",
 		},
-		Entry:    document.Frontmatter.Shub.Entry,
-		Runtime:  document.Frontmatter.Shub.Runtime,
-		Exports:  cloneAssetExports(document.Frontmatter.Shub.Exports),
-		Hooks:    cloneAssetHooks(document.Frontmatter.Shub.Hooks),
-		Metadata: cloneMap(document.Frontmatter.Shub.Metadata),
+		Entry:        document.Frontmatter.Shub.Entry,
+		Runtime:      document.Frontmatter.Shub.Runtime,
+		Dependencies: cloneAssetDependencies(document.Frontmatter.Shub.Dependencies),
+		Exports:      cloneAssetExports(document.Frontmatter.Shub.Exports),
+		Hooks:        cloneAssetHooks(document.Frontmatter.Shub.Hooks),
+		Metadata:     cloneMap(document.Frontmatter.Shub.Metadata),
 	}
 
 	if err := validateManifestSemantics(*manifest); err != nil {
@@ -349,6 +418,48 @@ func validateManifestSemantics(manifest AssetManifest) error {
 	case AssetCategoryMCP:
 		if manifest.Entry.Kind != "mcp-config" && manifest.Entry.Kind != "command" {
 			return fmt.Errorf("mcp assets must use entry.kind=mcp-config or command")
+		}
+	}
+	if err := validateDependencies(manifest.Dependencies); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateDependencies(dependencies AssetDependencies) error {
+	cases := []struct {
+		field    string
+		category AssetCategory
+		refs     []AssetDependencyRef
+	}{
+		{field: "dependencies.prompts", category: AssetCategoryPrompt, refs: dependencies.Prompts},
+		{field: "dependencies.skills", refs: dependencies.Skills},
+		{field: "dependencies.mcps", category: AssetCategoryMCP, refs: dependencies.MCPs},
+		{field: "dependencies.agents", category: AssetCategoryAgent, refs: dependencies.Agents},
+	}
+	seen := make(map[string]struct{})
+	for _, tc := range cases {
+		for index, ref := range tc.refs {
+			field := fmt.Sprintf("%s[%d]", tc.field, index)
+			id := strings.TrimSpace(ref.ID)
+			version := strings.TrimSpace(ref.Version)
+			if id == "" {
+				return fmt.Errorf("%s.id is required", field)
+			}
+			if version == "" {
+				return fmt.Errorf("%s.version is required", field)
+			}
+			if strings.EqualFold(version, "latest") {
+				return fmt.Errorf("%s.version must be pinned, got latest", field)
+			}
+			if ref.Category.IsValid() && tc.category != "" && ref.Category != tc.category {
+				return fmt.Errorf("%s.category must be %s, got %s", field, tc.category, ref.Category)
+			}
+			key := id + "@" + version
+			if _, ok := seen[key]; ok {
+				return fmt.Errorf("duplicate dependency reference: %s", key)
+			}
+			seen[key] = struct{}{}
 		}
 	}
 	return nil
@@ -1319,6 +1430,7 @@ func assetSourceToSkillPackage(version string, source AssetSource) *SkillPackage
 func cloneAssetManifest(manifest AssetManifest) *AssetManifest {
 	cloned := manifest
 	cloned.AllowedTools = cloneStrings(manifest.AllowedTools)
+	cloned.Dependencies = cloneAssetDependencies(manifest.Dependencies)
 	cloned.Exports = cloneAssetExports(manifest.Exports)
 	cloned.Hooks = cloneAssetHooks(manifest.Hooks)
 	cloned.Metadata = cloneMap(manifest.Metadata)
@@ -1379,6 +1491,24 @@ func cloneAssetExports(exports []AssetExport) []AssetExport {
 	}
 	cloned := make([]AssetExport, len(exports))
 	copy(cloned, exports)
+	return cloned
+}
+
+func cloneAssetDependencies(dependencies AssetDependencies) AssetDependencies {
+	return AssetDependencies{
+		Prompts: cloneAssetDependencyRefs(dependencies.Prompts),
+		Skills:  cloneAssetDependencyRefs(dependencies.Skills),
+		MCPs:    cloneAssetDependencyRefs(dependencies.MCPs),
+		Agents:  cloneAssetDependencyRefs(dependencies.Agents),
+	}
+}
+
+func cloneAssetDependencyRefs(refs []AssetDependencyRef) []AssetDependencyRef {
+	if len(refs) == 0 {
+		return nil
+	}
+	cloned := make([]AssetDependencyRef, len(refs))
+	copy(cloned, refs)
 	return cloned
 }
 

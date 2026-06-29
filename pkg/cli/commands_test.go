@@ -19,7 +19,6 @@ func TestCommandTree(t *testing.T) {
 		"configure",
 		"daemon",
 		"delete",
-		"deployments",
 		"embeddings",
 		"export",
 		"get",
@@ -54,12 +53,10 @@ func TestCommandTree(t *testing.T) {
 		"agent": 10,
 		// init, build, add-tool, publish, delete, list, run, show
 		"mcp": 8,
-		// create, list, show, delete
-		"deployments": 4,
 		// build, delete, init, lint, list, publish, pull, show
 		"skill": 8,
-		// add, deploy, doctor, lint, package, search, source, sync, use
-		"shub": 9,
+		// add, deploy, doctor, lint, package, resolve, search, source, sync, use
+		"shub": 10,
 		// list, publish, delete, show
 		"prompt": 4,
 		// generate

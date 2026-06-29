@@ -1,6 +1,6 @@
 // Package kinds defines the registry of resource types (agent, skill, prompt,
-// mcp, provider, deployment, and enterprise-contributed kinds). The registry
-// is the single source of truth for every layer that needs per-kind behavior:
+// mcp, and enterprise-contributed kinds). The registry is the single source of
+// truth for every layer that needs per-kind behavior:
 // the server dispatcher for POST /v0/apply, the CLI for arctl apply/delete/get/init/build,
 // init templates, and table rendering.
 package kinds

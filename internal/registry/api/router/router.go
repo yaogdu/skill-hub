@@ -177,10 +177,6 @@ func NewHumaAPI(
 			Description: "Operations for discovering and retrieving Agentic skills",
 		},
 		{
-			Name:        "providers",
-			Description: "Operations for managing deployment provider instances",
-		},
-		{
 			Name:        "shub",
 			Description: "Operations for configuring SHUB fallback sources and pulling mirrored assets",
 		},

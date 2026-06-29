@@ -20,7 +20,6 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/api/router"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/config"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/database"
-	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/telemetry"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
@@ -38,7 +37,6 @@ func TestPrometheusHandler(t *testing.T) {
 
 	storeDB := database.NewTestDB(t)
 	serverService := serversvc.New(serversvc.Dependencies{StoreDB: storeDB, Config: testConfig})
-	deploymentService := deploymentsvc.New(deploymentsvc.Dependencies{StoreDB: storeDB})
 	server, err := serverService.PublishServer(context.Background(), &apiv0.ServerJSON{
 		Schema:      model.CurrentSchemaURL,
 		Name:        "io.github.example/test-server",
@@ -62,7 +60,7 @@ func TestPrometheusHandler(t *testing.T) {
 		router.WithSkipPaths("/health", "/metrics", "/ping", "/docs"),
 	))
 	v0health.RegisterHealthEndpoint(api, "/v0", cfg, metrics)
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	// Add /metrics for Prometheus metrics using promhttp
 	mux.Handle("/metrics", metrics.PrometheusHandler())

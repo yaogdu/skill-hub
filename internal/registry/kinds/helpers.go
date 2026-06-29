@@ -92,7 +92,7 @@ func MakeInitTemplate[Spec any](kind string, defaultSpec Spec) InitTemplateFunc 
 }
 
 // AppliedResult returns an applied Result. Used by kinds whose Apply functions
-// have custom service-call logic (e.g. provider, deployment).
+// have custom service-call logic.
 func AppliedResult(kind string, doc *Document) *Result {
 	return &Result{
 		Kind:    kind,

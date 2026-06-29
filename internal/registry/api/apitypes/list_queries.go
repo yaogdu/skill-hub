@@ -40,13 +40,3 @@ type ListAssetsInput struct {
 	Version      string `query:"version" json:"version,omitempty" doc:"Filter by version ('latest' for latest version, or an exact version like '1.2.3')" required:"false" example:"latest"`
 	Category     string `query:"category" json:"category,omitempty" doc:"Filter by asset category" required:"false" enum:"prompt,agent,mcp" example:"prompt"`
 }
-
-// DeploymentsListInput represents shared query parameters for listing deployments.
-type DeploymentsListInput struct {
-	Platform     string `query:"platform" json:"platform,omitempty" doc:"Filter by provider platform type (matches registered provider platforms)" example:"local"`
-	ProviderID   string `query:"providerId" json:"providerId,omitempty" doc:"Filter by provider instance ID"`
-	ResourceType string `query:"resourceType" json:"resourceType,omitempty" doc:"Filter by resource type (mcp, agent)" example:"mcp" enum:"mcp,agent"`
-	Status       string `query:"status" json:"status,omitempty" doc:"Filter by deployment status"`
-	Origin       string `query:"origin" json:"origin,omitempty" doc:"Filter by deployment origin (managed, discovered)" enum:"managed,discovered"`
-	ResourceName string `query:"resourceName" json:"resourceName,omitempty" doc:"Case-insensitive substring filter on resource name"`
-}

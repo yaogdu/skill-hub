@@ -31,6 +31,7 @@ func init() {
 	ShubCmd.AddCommand(LintCmd)
 	ShubCmd.AddCommand(PackageCmd)
 	ShubCmd.AddCommand(DeployCmd)
+	ShubCmd.AddCommand(ResolveCmd)
 	ShubCmd.AddCommand(AddCmd)
 	ShubCmd.AddCommand(SourceCmd)
 	ShubCmd.AddCommand(SearchCmd)

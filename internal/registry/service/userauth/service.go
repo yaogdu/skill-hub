@@ -258,7 +258,7 @@ func (s *service) requireAdmin(ctx context.Context) error {
 
 func permissionsForRole(role string) []auth.Permission {
 	if strings.EqualFold(role, auth.RoleAdmin) {
-		return []auth.Permission{{Action: auth.PermissionActionRead, ResourcePattern: "*"}, {Action: auth.PermissionActionPublish, ResourcePattern: "*"}, {Action: auth.PermissionActionEdit, ResourcePattern: "*"}, {Action: auth.PermissionActionDelete, ResourcePattern: "*"}, {Action: auth.PermissionActionDeploy, ResourcePattern: "*"}}
+		return []auth.Permission{{Action: auth.PermissionActionRead, ResourcePattern: "*"}, {Action: auth.PermissionActionPublish, ResourcePattern: "*"}, {Action: auth.PermissionActionEdit, ResourcePattern: "*"}, {Action: auth.PermissionActionDelete, ResourcePattern: "*"}}
 	}
 	return nil
 }

@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	internaldb "github.com/agentregistry-dev/agentregistry/internal/registry/database"
+	platformtypes "github.com/agentregistry-dev/agentregistry/internal/registry/platforms/types"
 	agentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/agent"
 	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	providersvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/provider"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
-	registrytypes "github.com/agentregistry-dev/agentregistry/pkg/types"
 	apiv0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 	"github.com/modelcontextprotocol/registry/pkg/model"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +46,7 @@ func (m *mockDeploymentAdapter) Discover(_ context.Context, _ string) ([]*models
 	return nil, nil
 }
 
-var _ registrytypes.DeploymentPlatformAdapter = (*mockDeploymentAdapter)(nil)
+var _ platformtypes.DeploymentAdapter = (*mockDeploymentAdapter)(nil)
 
 func testCtx() context.Context {
 	return internaldb.WithTestSession(context.Background())
@@ -85,7 +85,7 @@ func newTestDeploymentService(t *testing.T) (deploymentsvc.Registry, string, str
 	svc := deploymentsvc.New(deploymentsvc.Dependencies{
 		StoreDB:   testDB,
 		Providers: provSvc,
-		DeploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		DeploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"mock": newMockAdapter(),
 		},
 	})
@@ -127,7 +127,7 @@ func newTestDeploymentServiceWithAdapter(t *testing.T, adapter *mockDeploymentAd
 	svc := deploymentsvc.New(deploymentsvc.Dependencies{
 		StoreDB:   testDB,
 		Providers: provSvc,
-		DeploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		DeploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"mock": adapter,
 		},
 	})
@@ -273,7 +273,7 @@ func newTestDeploymentServiceWithServer(t *testing.T, adapter *mockDeploymentAda
 	svc := deploymentsvc.New(deploymentsvc.Dependencies{
 		StoreDB:   testDB,
 		Providers: provSvc,
-		DeploymentAdapters: map[string]registrytypes.DeploymentPlatformAdapter{
+		DeploymentAdapters: map[string]platformtypes.DeploymentAdapter{
 			"mock": adapter,
 		},
 	})

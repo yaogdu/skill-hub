@@ -17,7 +17,6 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/config"
 	internaldb "github.com/agentregistry-dev/agentregistry/internal/registry/database"
 	"github.com/agentregistry-dev/agentregistry/internal/registry/embeddings"
-	deploymentsvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/deployment"
 	serversvc "github.com/agentregistry-dev/agentregistry/internal/registry/service/server"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
@@ -31,14 +30,13 @@ import (
 
 const semanticEmbeddingDimensions = 1536
 
-func newServerEndpointServices(storeDB database.Store, cfg *config.Config, embeddingProvider embeddings.Provider) (serversvc.Registry, deploymentsvc.Registry) {
+func newServerEndpointServices(storeDB database.Store, cfg *config.Config, embeddingProvider embeddings.Provider) serversvc.Registry {
 	serverService := serversvc.New(serversvc.Dependencies{
 		StoreDB:            storeDB,
 		Config:             cfg,
 		EmbeddingsProvider: embeddingProvider,
 	})
-	deploymentService := deploymentsvc.New(deploymentsvc.Dependencies{StoreDB: storeDB})
-	return serverService, deploymentService
+	return serverService
 }
 
 func TestListServersEndpoint(t *testing.T) {
@@ -51,7 +49,7 @@ func TestListServersEndpoint(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	serverService, deploymentService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
+	serverService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
 
 	// Setup test data
 	_, err := serverService.PublishServer(ctx, &apiv0.ServerJSON{
@@ -73,7 +71,7 @@ func TestListServersEndpoint(t *testing.T) {
 	// Create API
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	tests := []struct {
 		name           string
@@ -163,7 +161,7 @@ func TestListServersSemanticSearch(t *testing.T) {
 		"server": {0.1, 0.95, 0.0},
 	})
 
-	serverService, deploymentService := newServerEndpointServices(db, cfg, provider)
+	serverService := newServerEndpointServices(db, cfg, provider)
 
 	// Setup servers
 	backupServer := "com.example/backup-server"
@@ -206,7 +204,7 @@ func TestListServersSemanticSearch(t *testing.T) {
 
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	t.Run("semantic search ranks by similarity", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/v0/servers?search=server&semantic_search=true", nil)
@@ -249,7 +247,7 @@ func TestGetLatestServerVersionEndpoint(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	serverService, deploymentService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
+	serverService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
 
 	// Setup test data
 	_, err := serverService.PublishServer(ctx, &apiv0.ServerJSON{
@@ -263,7 +261,7 @@ func TestGetLatestServerVersionEndpoint(t *testing.T) {
 	// Create API
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	tests := []struct {
 		name           string
@@ -320,7 +318,7 @@ func TestGetServerVersionEndpoint(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	serverService, deploymentService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
+	serverService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
 
 	serverName := "com.example/version-server"
 
@@ -353,7 +351,7 @@ func TestGetServerVersionEndpoint(t *testing.T) {
 	// Create API
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	tests := []struct {
 		name           string
@@ -507,7 +505,7 @@ func TestGetServerReadmeEndpoints(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	serverService, deploymentService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
+	serverService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
 
 	serverName := "com.example/readme-endpoint"
 	_, err := serverService.PublishServer(ctx, &apiv0.ServerJSON{
@@ -524,7 +522,7 @@ func TestGetServerReadmeEndpoints(t *testing.T) {
 
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	t.Run("latest readme", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/v0/servers/"+url.PathEscape(serverName)+"/readme", nil)
@@ -588,7 +586,7 @@ func TestGetAllVersionsEndpoint(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	serverService, deploymentService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
+	serverService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
 
 	serverName := "com.example/multi-version-server"
 
@@ -607,7 +605,7 @@ func TestGetAllVersionsEndpoint(t *testing.T) {
 	// Create API
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	tests := []struct {
 		name           string
@@ -688,7 +686,7 @@ func TestServersEndpointEdgeCases(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	serverService, deploymentService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
+	serverService := newServerEndpointServices(internaldb.NewTestDB(t), testConfig, nil)
 
 	// Setup test data with edge case names that comply with constraints
 	specialServers := []struct {
@@ -714,7 +712,7 @@ func TestServersEndpointEdgeCases(t *testing.T) {
 	// Create API
 	mux := http.NewServeMux()
 	api := humago.New(mux, huma.DefaultConfig("Test API", "1.0.0"))
-	v0servers.RegisterServersEndpoints(api, "/v0", serverService, deploymentService)
+	v0servers.RegisterServersEndpoints(api, "/v0", serverService)
 
 	t.Run("URL encoding edge cases", func(t *testing.T) {
 		tests := []struct {

@@ -66,7 +66,6 @@ export type AgentResponse = {
 };
 
 export type AgentResponseMeta = {
-    'aregistry.ai/deployments'?: ResourceDeploymentsMeta;
     'aregistry.ai/semantic'?: AgentSemanticMeta;
     'io.modelcontextprotocol.registry/official'?: AgentRegistryExtensions;
 };
@@ -153,6 +152,19 @@ export type AssetCommand = {
     run: Array<string>;
 };
 
+export type AssetDependencies = {
+    agents?: Array<AssetDependencyRef>;
+    mcps?: Array<AssetDependencyRef>;
+    prompts?: Array<AssetDependencyRef>;
+    skills?: Array<AssetDependencyRef>;
+};
+
+export type AssetDependencyRef = {
+    category?: string;
+    id: string;
+    version: string;
+};
+
 export type AssetEntry = {
     args?: Array<string>;
     kind: string;
@@ -185,6 +197,7 @@ export type AssetListResponse = {
 export type AssetManifest = {
     allowedTools?: Array<string>;
     category: string;
+    dependencies?: AssetDependencies;
     description: string;
     entry: AssetEntry;
     exports?: Array<AssetExport>;
@@ -257,96 +270,6 @@ export type AssetSourceSkill = {
     body?: string;
     bodyFormat: string;
     path: string;
-};
-
-export type CreateProviderInput = {
-    config?: {
-        [key: string]: unknown;
-    };
-    id?: string;
-    name: string;
-    platform: string;
-};
-
-export type Deployment = {
-    deployedAt: string;
-    env: {
-        [key: string]: string;
-    };
-    error?: string;
-    id: string;
-    origin: string;
-    preferRemote: boolean;
-    providerConfig?: {
-        [key: string]: unknown;
-    };
-    providerId?: string;
-    providerMetadata?: {
-        [key: string]: unknown;
-    };
-    resourceType: string;
-    serverName: string;
-    status: string;
-    updatedAt: string;
-    version: string;
-};
-
-export type DeploymentLogsBody = {
-    deploymentId: string;
-    logs: Array<string>;
-    status: string;
-};
-
-export type DeploymentRequest = {
-    /**
-     * Deployment environment variables.
-     */
-    env?: {
-        [key: string]: string;
-    };
-    /**
-     * Prefer remote deployment over local
-     */
-    preferRemote?: boolean;
-    /**
-     * Optional provider-specific deployment settings (not env vars).
-     */
-    providerConfig?: {
-        [key: string]: unknown;
-    };
-    /**
-     * Concrete provider instance ID.
-     */
-    providerId: string;
-    /**
-     * Type of resource to deploy (mcp, agent)
-     */
-    resourceType?: 'mcp' | 'agent';
-    /**
-     * Server name to deploy
-     */
-    serverName: string;
-    /**
-     * Version to deploy (use 'latest' for latest version)
-     */
-    version: string;
-};
-
-export type DeploymentSummary = {
-    deployedAt: string;
-    id: string;
-    origin: string;
-    providerId?: string;
-    status: string;
-    updatedAt: string;
-    version?: string;
-};
-
-export type DeploymentsListResponse = {
-    /**
-     * List of deployed servers
-     */
-    deployments: Array<Deployment>;
 };
 
 export type EmptyResponse = {
@@ -617,22 +540,6 @@ export type PromptResponseMeta = {
     'io.modelcontextprotocol.registry/official'?: PromptRegistryExtensions;
 };
 
-export type Provider = {
-    config?: {
-        [key: string]: unknown;
-    };
-    createdAt: string;
-    id: string;
-    name: string;
-    platform: string;
-    updatedAt: string;
-};
-
-export type ProvidersListResponseBody = {
-    count: number;
-    providers: Array<Provider>;
-};
-
 export type RegistryExtensions = {
     /**
      * Whether this is the latest version of the server
@@ -674,11 +581,6 @@ export type Repository = {
      * Repository URL for browsing source code. Should support both web browsing and git clone operations.
      */
     url?: string;
-};
-
-export type ResourceDeploymentsMeta = {
-    count: number;
-    deployments: Array<DeploymentSummary>;
 };
 
 export type Result = {
@@ -770,7 +672,6 @@ export type ServerResponse = {
 };
 
 export type ServerResponseMeta = {
-    'aregistry.ai/deployments'?: ResourceDeploymentsMeta;
     'aregistry.ai/semantic'?: ServerSemanticMeta;
     'io.modelcontextprotocol.registry/official'?: RegistryExtensions;
 };
@@ -1371,201 +1272,6 @@ export type UploadAssetPackageV0Responses = {
 
 export type UploadAssetPackageV0Response = UploadAssetPackageV0Responses[keyof UploadAssetPackageV0Responses];
 
-export type ListDeploymentsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Filter by provider platform type (matches registered provider platforms)
-         */
-        platform?: string;
-        /**
-         * Filter by provider instance ID
-         */
-        providerId?: string;
-        /**
-         * Filter by resource type (mcp, agent)
-         */
-        resourceType?: 'mcp' | 'agent';
-        /**
-         * Filter by deployment status
-         */
-        status?: string;
-        /**
-         * Filter by deployment origin (managed, discovered)
-         */
-        origin?: 'managed' | 'discovered';
-        /**
-         * Case-insensitive substring filter on resource name
-         */
-        resourceName?: string;
-    };
-    url: '/v0/deployments';
-};
-
-export type ListDeploymentsErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type ListDeploymentsError = ListDeploymentsErrors[keyof ListDeploymentsErrors];
-
-export type ListDeploymentsResponses = {
-    /**
-     * OK
-     */
-    200: DeploymentsListResponse;
-};
-
-export type ListDeploymentsResponse = ListDeploymentsResponses[keyof ListDeploymentsResponses];
-
-export type DeployServerData = {
-    body: DeploymentRequest;
-    path?: never;
-    query?: never;
-    url: '/v0/deployments';
-};
-
-export type DeployServerErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type DeployServerError = DeployServerErrors[keyof DeployServerErrors];
-
-export type DeployServerResponses = {
-    /**
-     * OK
-     */
-    200: Deployment;
-};
-
-export type DeployServerResponse = DeployServerResponses[keyof DeployServerResponses];
-
-export type RemoveDeploymentData = {
-    body?: never;
-    path: {
-        /**
-         * Deployment ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/v0/deployments/{id}';
-};
-
-export type RemoveDeploymentErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type RemoveDeploymentError = RemoveDeploymentErrors[keyof RemoveDeploymentErrors];
-
-export type RemoveDeploymentResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type RemoveDeploymentResponse = RemoveDeploymentResponses[keyof RemoveDeploymentResponses];
-
-export type GetDeploymentData = {
-    body?: never;
-    path: {
-        /**
-         * Deployment ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/v0/deployments/{id}';
-};
-
-export type GetDeploymentErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type GetDeploymentError = GetDeploymentErrors[keyof GetDeploymentErrors];
-
-export type GetDeploymentResponses = {
-    /**
-     * OK
-     */
-    200: Deployment;
-};
-
-export type GetDeploymentResponse = GetDeploymentResponses[keyof GetDeploymentResponses];
-
-export type CancelDeploymentData = {
-    body?: never;
-    path: {
-        /**
-         * Deployment ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/v0/deployments/{id}/cancel';
-};
-
-export type CancelDeploymentErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type CancelDeploymentError = CancelDeploymentErrors[keyof CancelDeploymentErrors];
-
-export type CancelDeploymentResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type CancelDeploymentResponse = CancelDeploymentResponses[keyof CancelDeploymentResponses];
-
-export type GetDeploymentLogsData = {
-    body?: never;
-    path: {
-        /**
-         * Deployment ID
-         */
-        id: string;
-    };
-    query?: never;
-    url: '/v0/deployments/{id}/logs';
-};
-
-export type GetDeploymentLogsErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type GetDeploymentLogsError = GetDeploymentLogsErrors[keyof GetDeploymentLogsErrors];
-
-export type GetDeploymentLogsResponses = {
-    /**
-     * OK
-     */
-    200: DeploymentLogsBody;
-};
-
-export type GetDeploymentLogsResponse = GetDeploymentLogsResponses[keyof GetDeploymentLogsResponses];
-
 export type GetHealthV0Data = {
     body?: never;
     path?: never;
@@ -1784,131 +1490,6 @@ export type GetPromptVersionV0Responses = {
 };
 
 export type GetPromptVersionV0Response = GetPromptVersionV0Responses[keyof GetPromptVersionV0Responses];
-
-export type ListProvidersData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Filter providers by platform type
-         */
-        platform?: string;
-    };
-    url: '/v0/providers';
-};
-
-export type ListProvidersErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type ListProvidersError = ListProvidersErrors[keyof ListProvidersErrors];
-
-export type ListProvidersResponses = {
-    /**
-     * OK
-     */
-    200: ProvidersListResponseBody;
-};
-
-export type ListProvidersResponse = ListProvidersResponses[keyof ListProvidersResponses];
-
-export type CreateProviderData = {
-    body: CreateProviderInput;
-    path?: never;
-    query?: never;
-    url: '/v0/providers';
-};
-
-export type CreateProviderErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type CreateProviderError = CreateProviderErrors[keyof CreateProviderErrors];
-
-export type CreateProviderResponses = {
-    /**
-     * OK
-     */
-    200: Provider;
-};
-
-export type CreateProviderResponse = CreateProviderResponses[keyof CreateProviderResponses];
-
-export type DeleteProviderData = {
-    body?: never;
-    path: {
-        /**
-         * Provider ID
-         */
-        providerId: string;
-    };
-    query?: {
-        /**
-         * Provider platform hint (optional)
-         */
-        platform?: string;
-    };
-    url: '/v0/providers/{providerId}';
-};
-
-export type DeleteProviderErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type DeleteProviderError = DeleteProviderErrors[keyof DeleteProviderErrors];
-
-export type DeleteProviderResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type DeleteProviderResponse = DeleteProviderResponses[keyof DeleteProviderResponses];
-
-export type GetProviderData = {
-    body?: never;
-    path: {
-        /**
-         * Provider ID
-         */
-        providerId: string;
-    };
-    query?: {
-        /**
-         * Provider platform hint (optional)
-         */
-        platform?: string;
-    };
-    url: '/v0/providers/{providerId}';
-};
-
-export type GetProviderErrors = {
-    /**
-     * Error
-     */
-    default: ErrorModel;
-};
-
-export type GetProviderError = GetProviderErrors[keyof GetProviderErrors];
-
-export type GetProviderResponses = {
-    /**
-     * OK
-     */
-    200: Provider;
-};
-
-export type GetProviderResponse = GetProviderResponses[keyof GetProviderResponses];
 
 export type ListServersV0Data = {
     body?: never;

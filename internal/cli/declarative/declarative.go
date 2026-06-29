@@ -2,8 +2,6 @@ package declarative
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/agentregistry-dev/agentregistry/internal/cli/scheme"
@@ -11,7 +9,6 @@ import (
 	"github.com/agentregistry-dev/agentregistry/internal/registry/kinds"
 	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/printer"
-	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
 	v0 "github.com/modelcontextprotocol/registry/pkg/api/v0"
 )
 
@@ -224,85 +221,5 @@ func newCLIRegistry() *kinds.Registry {
 			{Header: "DESCRIPTION"},
 		},
 	})
-	reg.Register(kinds.Kind{
-		Kind:     "provider",
-		Plural:   "providers",
-		Aliases:  []string{"Provider"},
-		SpecType: reflect.TypeFor[kinds.ProviderSpec](),
-		TableColumns: []kinds.Column{
-			{Header: "NAME"}, {Header: "PLATFORM"},
-		},
-		ListFunc: kinds.MakeListFunc(func() ([]*models.Provider, error) {
-			return apiClient.GetProviders()
-		}),
-		RowFunc: func(item any) []string {
-			p := item.(*models.Provider)
-			return []string{p.Name, p.Platform}
-		},
-		Get: func(_ context.Context, name, _ string) (any, error) {
-			return apiClient.GetProvider(name)
-		},
-		Delete: func(_ context.Context, name, _ string) error {
-			return apiClient.DeleteProvider(name)
-		},
-	})
-	reg.Register(kinds.Kind{
-		Kind:     "deployment",
-		Plural:   "deployments",
-		Aliases:  []string{"Deployment"},
-		SpecType: reflect.TypeFor[kinds.DeploymentSpec](),
-		TableColumns: []kinds.Column{
-			{Header: "ID"}, {Header: "NAME"}, {Header: "VERSION"},
-			{Header: "TYPE"}, {Header: "PROVIDER"}, {Header: "STATUS"},
-		},
-		ListFunc: kinds.MakeListFunc(func() ([]*models.Deployment, error) {
-			resp, err := apiClient.GetDeployedServers()
-			if err != nil {
-				return nil, err
-			}
-			result := make([]*models.Deployment, len(resp))
-			copy(result, resp)
-			return result, nil
-		}),
-		RowFunc: func(item any) []string {
-			d := item.(*models.Deployment)
-			return []string{d.ID, d.ServerName, d.Version, d.ResourceType, d.ProviderID, d.Status}
-		},
-		Delete: deploymentDeleteFunc,
-	})
 	return reg
-}
-
-// deploymentDeleteFunc looks up deployments by (name, version) and deletes each match
-// by ID. A non-empty version is required — deployments are identified by
-// (name, version, provider), so omitting version could span multiple versions
-// and cause surprise bulk deletes. The same (name, version) can still map to
-// multiple deployments (one per provider); all of those are removed.
-func deploymentDeleteFunc(_ context.Context, name, version string) error {
-	if version == "" {
-		return fmt.Errorf("%w: --version is required when deleting deployments", database.ErrInvalidInput)
-	}
-	all, err := apiClient.GetDeployedServers()
-	if err != nil {
-		return fmt.Errorf("listing deployments: %w", err)
-	}
-	var matches []*models.Deployment
-	for _, d := range all {
-		if d == nil {
-			continue
-		}
-		if d.ServerName == name && d.Version == version {
-			matches = append(matches, d)
-		}
-	}
-	if len(matches) == 0 {
-		return database.ErrNotFound
-	}
-	var errs []error
-	for _, d := range matches {
-		if err := apiClient.DeleteDeployment(d.ID); err != nil {
-			errs = append(errs, fmt.Errorf("deleting %s (provider %s): %w", d.ID, d.ProviderID, err))
-		}
-	}
-	return errors.Join(errs...)
 }

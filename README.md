@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <strong>Build. Deploy. Discover.</strong> One registry for MCP servers, agents, skills, and prompts.
+  <strong>Publish. Resolve. Govern.</strong> One registry for MCP servers, agents, skills, and prompts.
 </p>
 
 ---
@@ -42,7 +42,7 @@ It is primarily positioned for company-internal, private deployments: a team-own
 
 Right now, the MCP servers and AI tools your team needs are spread across npm, PyPI, Docker Hub, GitHub repos, and random URLs. Nobody knows which ones are trustworthy, which versions work, or how to get them running. Every developer is doing their own manual Docker setup and IDE configuration.
 
-skill-hub puts all of that into a single registry with a CLI and a web UI. You import or publish artifacts once, and then anyone on your team can discover them, deploy them with one command, and have their IDE automatically configured to use them.
+skill-hub puts all of that into a single registry with a CLI and a web UI. You import or publish artifacts once, and then anyone on your team can discover approved versions, resolve fixed dependencies, and have their IDE automatically configured to use them.
 
 ---
 
@@ -50,7 +50,7 @@ skill-hub puts all of that into a single registry with a CLI and a web UI. You i
 
 - **One trusted source for AI building blocks** — a curated catalog instead of scattered repos, scripts, and one-off MCP setup
 - **Faster developer onboarding** — discover approved artifacts quickly with less manual configuration
-- **Consistent path from laptop to cluster** — same discovery and delivery workflow across local dev and Kubernetes
+- **Consistent path from laptop to CI** — same discovery, dependency resolution, and delivery workflow across local dev and build pipelines
 - **Governance without slowing teams down** — centralize curation and publishing without forcing each team to rebuild the process
 
 <p align="center">
@@ -61,11 +61,11 @@ skill-hub puts all of that into a single registry with a CLI and a web UI. You i
 <tr>
 <td width="50%" valign="top">
 <h3>For Organizations</h3>
-<p><strong>Curate &amp; Deploy</strong></p>
+<p><strong>Curate &amp; Distribute</strong></p>
 <p>Package, collect, and enrich AI artifacts from any source in a single centralized registry.</p>
 <ul>
   <li><strong>Centralized Control</strong> - Package and collect AI artifacts from any source into a single registry</li>
-  <li><strong>Security &amp; Governance</strong> - Curate and approve agents, servers, and skills before company-wide deployment</li>
+  <li><strong>Security &amp; Governance</strong> - Curate and approve agents, servers, and skills before company-wide consumption</li>
   <li><strong>Enriched Metadata</strong> - Add context to help assess trustworthiness and security</li>
 </ul>
 
@@ -73,7 +73,7 @@ skill-hub puts all of that into a single registry with a CLI and a web UI. You i
 <td width="50%" valign="top">
 <h3>For Developers</h3>
 <p><strong>Build &amp; Publish</strong></p>
-<p>Build, test, publish, and deploy AI artifacts with minimal dependencies.</p>
+<p>Build, test, publish, and install AI artifacts with minimal dependencies.</p>
 <ul>
   <li><strong>Local Development</strong> - Create and test agents, skills, and MCP servers locally</li>
   <li><strong>Easy Publishing</strong> - Publish your artifacts to a registry with a single command</li>
@@ -154,7 +154,7 @@ You can then use either the Go CLI (`arctl`) or the npm wrapper (`npx @yaogdu-sk
 <a id="documentation-map"></a>
 ## Documentation Map
 
-- [`README.md`](./README.md): product overview, deployment entry points, auth model, and SHUB workflow
+- [`README.md`](./README.md): product overview, self-hosting entry points, auth model, and SHUB workflow
 - [`README.zh-CN.md`](./README.zh-CN.md): Chinese overview for private deployment, operations, and onboarding
 - [`DEVELOPMENT.md`](./DEVELOPMENT.md): local development setup and contributor workflow
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md): architecture and SHUB package model
@@ -173,12 +173,12 @@ Create, scaffold, and publish the building blocks of your agentic infrastructure
 
 - **MCP servers** — Register servers from npm (`npx`), PyPI (`uvx`), OCI/Docker images, or remote HTTP/SSE endpoints. Each entry supports versioning, environment variables, package references, and automated quality scores.
 - **Skills / SHUB packages** — Build structured knowledge packages rooted by `SKILL.md`. Author with `arctl skill init`, validate and package with `arctl shub lint` / `arctl shub package`, publish with `arctl shub deploy`, configure named fallback sources with `arctl shub source ...`, and consume locally with `npx @yaogdu-skill-hub/shub add`, `use`, `sync`, and `doctor` through the npm wrapper under `npm/shub/`. Current SHUB publish flow prefers the unified `/v0/assets` API and falls back to the legacy `/v0/skills` compatibility path when needed. New asset publishes are mirrored into the legacy skill model for compatibility, native asset migration backfills historical SHUB skills into the `assets` table, and `npx @yaogdu-skill-hub/shub add` can now automatically fall back to built-in and admin-configured upstream sources when the registry misses locally, with `-g` and `--fallback-source` available to narrow or force the lookup order.
-- **Agents** — Define agents that bundle an identity with dependencies: which MCP servers it needs, which skills it uses, and how it should be configured. Scaffold with `arctl agent init`, then package everything into a versioned blueprint for one-step deployment.
+- **Agents** — Define agents that bundle an identity with dependencies: which MCP servers it needs, which skills it uses, and how it should be configured. Scaffold with `arctl agent init`, then package everything into a versioned blueprint that CI/CD can resolve and publish reproducibly.
 - **Prompts** — Create reusable instruction templates that define how an agent should behave in specific contexts. Version and store them alongside agents, skills, and servers so they're discoverable and shareable across your team.
 
 ### Web UI
 
-A browser-based admin interface at `localhost:12121`. Browse the artifact catalog, add MCP servers, skills, and agents, review enrichment scores and metadata, manage deployments, and configure the registry — all without touching the CLI.
+A browser-based admin interface at `localhost:12121`. Browse the artifact catalog, add MCP servers, skills, and agents, review enrichment scores and metadata, manage fallback sources, and configure the registry — all without touching the CLI.
 
 <p align="center">
   <img src="img/arwui.gif" alt="agentregistry Web UI" width="800"/>
@@ -205,40 +205,41 @@ Curate a shared catalog of MCP servers, agents, skills, and prompts your teams c
 
 Turn a broad set of available AI artifacts into a collection your organization is willing to support.
 
-- Organize what developers can discover and deploy
+- Organize what developers can discover, install, and promote
 - Review enrichment scores, versioning, and environment variable requirements
 - Standardize how artifacts are shared across teams
 - Keep control of what gets published and promoted
 
-### Deployment Workflows
+### Publishing and Consumption Workflows
 
-Move from discovery to usage without reinventing the same delivery path for every team.
+Move from discovery to usage without reinventing the same packaging and dependency path for every team.
 
-- Run workflows locally with `arctl`
-- Deploy skill-hub into Kubernetes with Helm
-- Support local environments and shared platform environments from the same registry
-- Build and push agents — blueprints bundle an agent with its MCP servers and skills into a single deployable unit
+- Run lint, resolve, package, and publish workflows locally with `arctl`
+- Run skill-hub itself with Docker Compose or deploy the registry service with Helm
+- Support local development and CI/CD builds from the same registry
+- Build and publish agents with explicit MCP, skill, and prompt dependencies recorded in `shub.lock`
 
 ### Client and Gateway Integration
 
 Make approved artifacts easier to consume from the tools developers already use.
 
 - Generate configuration for Claude Desktop, Cursor, and VS Code
-- Pair with agentgateway for a consistent access layer to deployed MCP infrastructure
+- Export MCP and skill configuration that client tools can consume directly
 - Reduce manual setup for AI clients and shared environments
 
 ### How It Works Together
 
 1. Platform teams curate and publish approved MCP servers, agents, and skills in skill-hub
 2. Developers discover those artifacts through the web UI or `arctl`
-3. Teams pull and deploy what they need in local environments or Kubernetes
-4. AI clients and shared gateway infrastructure connect to approved artifacts through a consistent workflow
+3. Teams resolve fixed versions into local workspaces or CI/CD pipelines
+4. AI clients consume the exported configuration and packages through a consistent workflow
 
 ### SHUB Workflow
 
 ```bash
 # authoring / CI side
 arctl shub lint ./skills/java-analyzer
+arctl shub resolve ./skills/java-analyzer
 arctl shub package ./skills/java-analyzer
 arctl shub deploy ./dist/java-analyzer-1.2.0.tar.gz --package-url https://gitlab.example.com/packages/java-analyzer-1.2.0.tar.gz
 arctl shub deploy ./skills/java-analyzer   # infers origin git tree URL when run inside a git checkout
@@ -254,7 +255,9 @@ npx @yaogdu-skill-hub/shub use arch/java-analyzer@1.2.0
 npx @yaogdu-skill-hub/shub doctor
 ```
 
-When you deploy a local `.tar.gz` without `--package-url` and the registry exposes the package upload API, `arctl shub deploy` uploads that archive into the registry first and then publishes the asset with a registry-hosted download URL like `/v0/assets/{assetID}/versions/{version}/package`. The server stores those archives under `AGENT_REGISTRY_STORAGE_DIR`, so private deployments should mount durable storage there. The bundled Docker Compose stack mounts your host `${HOME}/Documents/skill-storage` into the container path `/var/lib/agentregistry/storage`, and the Helm chart exposes both `config.storageDir` and `packageStorage.*` for PVC-backed deployments.
+When you publish a local `.tar.gz` without `--package-url` and the registry exposes the package upload API, `arctl shub deploy` uploads that archive into the registry first and then publishes the asset with a registry-hosted download URL like `/v0/assets/{assetID}/versions/{version}/package`. The `deploy` subcommand name is kept for SHUB compatibility; it does not perform runtime MCP or agent deployment. The server stores uploaded archives under `AGENT_REGISTRY_STORAGE_DIR`, so private installations should mount durable storage there. The bundled Docker Compose stack mounts your host `${HOME}/Documents/skill-storage` into the container path `/var/lib/agentregistry/storage`, and the Helm chart exposes both `config.storageDir` and `packageStorage.*` for PVC-backed installations.
+
+Agents and skills can declare fixed SHUB asset dependencies under `shub.dependencies` in `SKILL.md`, for example prompts, MCP servers, or other skills. `arctl shub resolve ./asset-dir` resolves those pinned `asset-id@version` references against the configured registry and writes `shub.lock`; `arctl shub resolve ./asset-dir --check` is intended for CI gates that must fail when the committed lockfile is stale. The dependency manifest does not embed registry URLs or credentials. Lookup uses the same CLI target settings as other SHUB commands: `--registry-url` / `ARCTL_API_BASE_URL` / `SHUB_API_BASE_URL` and `--registry-token` / `ARCTL_API_TOKEN` / `SHUB_API_TOKEN`. The dependency schema is documented in [`docs/shub-skill-frontmatter.schema.json`](./docs/shub-skill-frontmatter.schema.json), and the lockfile schema is documented in [`docs/shub-lock.schema.json`](./docs/shub-lock.schema.json).
 
 ### Publish A Local Skill
 
@@ -262,6 +265,7 @@ For a local skill directory:
 
 ```bash
 arctl shub lint ./skills/ai-agent-learning-system
+arctl shub resolve ./skills/ai-agent-learning-system
 arctl shub package ./skills/ai-agent-learning-system
 arctl shub deploy ./dist/ai-agent-learning-system-1.0.0.tar.gz
 ```
@@ -281,24 +285,11 @@ For Codex integration, `target: codex` + `mode: prompt-file` exports the current
 
 Registry clients resolve `ARCTL_API_BASE_URL` / `ARCTL_API_TOKEN` first and fall back to `SHUB_API_BASE_URL` / `SHUB_API_TOKEN`, so the npm `shub` wrapper and `arctl` share the same server targeting behavior. With the built-in auth flow enabled, the registry seeds a bootstrap admin, issues JWTs for dashboard login, and issues API keys for CLI automation. The dashboard toggle under Settings controls whether anonymous SHUB read flows are allowed; when enabled (the default), registry-backed reads require authentication, and when disabled, anonymous users can still search, add, and inspect assets while publish flows such as `shub deploy` remain authenticated. `AGENT_REGISTRY_PUBLIC_ACTIONS` is still available as a lower-level override when you intentionally want a broader or narrower anonymous policy. The packaged metadata contract is documented in [`docs/shub-package-metadata.schema.json`](./docs/shub-package-metadata.schema.json), and the local client state file is documented in [`docs/shub-state.schema.json`](./docs/shub-state.schema.json).
 
-## Secure Access with agentgateway
+## Runtime Integration Boundary
 
-skill-hub pairs with [agentgateway](https://github.com/agentgateway/agentgateway) to give you a single, secure entry point to all your deployed MCP servers and agents.
+skill-hub is intentionally scoped as an asset registry and distribution hub. It does not deploy MCP servers or agents into Docker, Kubernetes, or agentgateway. Runtime execution, routing, and traffic policy should stay in the systems that already own them, such as Kubernetes, CI/CD pipelines, IDE MCP configuration, agentgateway, or another platform runtime.
 
-Instead of exposing every MCP server individually, agentgateway acts as an AI-native reverse proxy that sits in front of your entire agentic infrastructure:
-
-- **Single endpoint** — AI clients (Claude Desktop, Cursor, VS Code) connect to one URL. The gateway routes each tool call to the correct backend MCP server.
-- **Authentication & authorization** — Enforce identity and access policies before requests reach your MCP servers. Control who can call which tools. Supports JWT validation and on-behalf-of auth flows.
-- **Centralized observability** — Log and monitor all agent-to-tool traffic in one place instead of instrumenting each server separately. Supports OTEL endpoints for traces, metrics, and logs.
-- **Dynamic discovery** — Deploy a new MCP server through skill-hub and every connected client picks it up automatically — no reconfiguration needed.
-- **LLM gateway** — agentgateway also acts as a unified gateway for LLM providers, giving you a single endpoint to route, manage, and secure access to multiple language models.
-- **Transport flexibility** — Proxy across stdio, SSE, and streamable HTTP transports seamlessly.
-
-<p align="center">
-  <img src="img/arch-diagram.png" alt="agentgateway architecture diagram" width="800"/>
-</p>
-
-When you run `arctl deploy`, skill-hub automatically configures the gateway routing so your MCP servers are reachable through the secured proxy. Run `arctl configure cursor` to point your IDE at the gateway endpoint.
+skill-hub's responsibility is to publish approved assets, resolve fixed versions, store package metadata, and export configuration that downstream tools can consume.
 
 ---
 

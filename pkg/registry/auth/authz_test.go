@@ -33,7 +33,6 @@ func TestResolvePublicActions(t *testing.T) {
 				auth.PermissionActionPublish,
 				auth.PermissionActionEdit,
 				auth.PermissionActionDelete,
-				auth.PermissionActionDeploy,
 			},
 		},
 		{
@@ -43,12 +42,12 @@ func TestResolvePublicActions(t *testing.T) {
 		},
 		{
 			name:          "parses explicit list",
-			raw:           " read , publish , deploy ",
+			raw:           " read , publish , delete ",
 			jwtConfigured: true,
 			want: []auth.PermissionAction{
 				auth.PermissionActionRead,
 				auth.PermissionActionPublish,
-				auth.PermissionActionDeploy,
+				auth.PermissionActionDelete,
 			},
 		},
 		{
@@ -69,7 +68,6 @@ func TestResolvePublicActions(t *testing.T) {
 				auth.PermissionActionPublish,
 				auth.PermissionActionEdit,
 				auth.PermissionActionDelete,
-				auth.PermissionActionDeploy,
 			},
 		},
 		{
@@ -87,7 +85,6 @@ func TestResolvePublicActions(t *testing.T) {
 				auth.PermissionActionPublish,
 				auth.PermissionActionEdit,
 				auth.PermissionActionDelete,
-				auth.PermissionActionDeploy,
 			},
 		},
 		{

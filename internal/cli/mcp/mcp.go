@@ -19,8 +19,7 @@ var McpCmd = &cobra.Command{
 	Args:  cobra.ArbitraryArgs,
 	Example: `arctl mcp list
 arctl mcp show my-mcp-server
-arctl mcp publish ./my-mcp-server
-arctl mcp deploy my-mcp-server`,
+arctl mcp publish ./my-mcp-server`,
 }
 
 func init() {

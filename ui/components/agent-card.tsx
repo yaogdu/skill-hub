@@ -2,30 +2,21 @@
 
 import { AgentResponse } from "@/lib/admin-api"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { Bot, Brain, Cpu, Github, Play } from "lucide-react"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { Bot, Brain, Cpu, Github } from "lucide-react"
 
 interface AgentCardProps {
   agent: AgentResponse
   onDelete?: (agent: AgentResponse) => void
-  onDeploy?: (agent: AgentResponse) => void
   showDelete?: boolean
-  showDeploy?: boolean
   showExternalLinks?: boolean
   onClick?: () => void
   versionCount?: number
 }
 
-export function AgentCard({ agent, onDeploy, showDeploy = false, onClick, versionCount }: AgentCardProps) {
+export function AgentCard({ agent, onClick, versionCount }: AgentCardProps) {
   const { agent: agentData, _meta } = agent
   const official = _meta?.['io.modelcontextprotocol.registry/official']
-  const hasImage = !!agentData.image
 
   const formatDate = (dateString: string) => {
     try {
@@ -109,38 +100,7 @@ export function AgentCard({ agent, onDeploy, showDeploy = false, onClick, versio
           </div>
         </div>
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          {showDeploy && onDeploy && (
-            hasImage ? (
-              <Button
-                variant="default"
-                size="sm"
-                className="h-7 gap-1 text-xs"
-                onClick={(e) => { e.stopPropagation(); onDeploy(agent) }}
-              >
-                <Play className="h-3 w-3" aria-hidden="true" />
-                Deploy
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0} onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="h-7 gap-1 text-xs"
-                      disabled
-                    >
-                      <Play className="h-3 w-3" aria-hidden="true" />
-                      Deploy
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent><p>No container image specified</p></TooltipContent>
-              </Tooltip>
-            )
-          )}
-        </div>
+        <div className="shrink-0" />
       </div>
     </TooltipProvider>
   )

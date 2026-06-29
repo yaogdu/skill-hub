@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/agentregistry-dev/agentregistry/pkg/models"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/auth"
 	"github.com/agentregistry-dev/agentregistry/pkg/registry/database"
 	"github.com/danielgtaylor/huma/v2"
@@ -19,28 +18,6 @@ var ErrCLINoStoredToken = errors.New("no stored authentication token")
 // ErrNoOIDCDefined is returned when OIDC is not defined.
 // This is expected for CLI commands that do not require authentication (e.g. artifact init) and a user/extension does not define OIDC.
 var ErrNoOIDCDefined = errors.New("OIDC is not defined")
-
-// ProviderPlatformAdapter defines provider CRUD behavior for a provider platform type.
-type ProviderPlatformAdapter interface {
-	Platform() string
-	ListProviders(ctx context.Context) ([]*models.Provider, error)
-	CreateProvider(ctx context.Context, in *models.CreateProviderInput) (*models.Provider, error)
-	GetProvider(ctx context.Context, providerID string) (*models.Provider, error)
-	UpdateProvider(ctx context.Context, providerID string, in *models.UpdateProviderInput) (*models.Provider, error)
-	DeleteProvider(ctx context.Context, providerID string) error
-}
-
-// DeploymentPlatformAdapter defines deployment behavior for a provider platform type.
-// This is the intended long-term adapter contract for /v0/deployments dispatch.
-type DeploymentPlatformAdapter interface {
-	Platform() string
-	SupportedResourceTypes() []string
-	Deploy(ctx context.Context, req *models.Deployment) (*models.DeploymentActionResult, error)
-	Undeploy(ctx context.Context, deployment *models.Deployment) error
-	GetLogs(ctx context.Context, deployment *models.Deployment) ([]string, error)
-	Cancel(ctx context.Context, deployment *models.Deployment) error
-	Discover(ctx context.Context, providerID string) ([]*models.Deployment, error)
-}
 
 // DatabaseFactory is a function type that creates a store implementation.
 // This allows implementors to run additional migrations and wrap the base store.
@@ -56,12 +33,6 @@ type AppOptions struct {
 	// The factory receives the base database and can run additional migrations.
 	// If nil, uses the default PostgreSQL database.
 	DatabaseFactory DatabaseFactory
-
-	// ProviderPlatforms registers adapters for provider CRUD by provider platform type.
-	ProviderPlatforms map[string]ProviderPlatformAdapter
-
-	// DeploymentPlatforms registers adapters for deployment lifecycle by provider platform type.
-	DeploymentPlatforms map[string]DeploymentPlatformAdapter
 
 	// ExtraRoutes allows external integrations to register additional HTTP routes
 	// using the same API instance and path prefix as OSS core routes.

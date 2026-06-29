@@ -49,16 +49,6 @@ export function Navigation() {
             >
               Catalog
             </Link>
-            <Link
-              href="/deployed"
-              className={`relative px-3 py-1.5 text-[15px] font-medium transition-colors ${
-                isActive("/deployed")
-                  ? "text-foreground after:absolute after:bottom-[-15px] after:left-1 after:right-1 after:h-[2px] after:rounded-full after:bg-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Deployed
-            </Link>
             {session && (
               <a
                 href="/settings"
