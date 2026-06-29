@@ -23,231 +23,174 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/yaogdu/skill-hub">GitHub</a> · <a href="https://github.com/yaogdu/skill-hub/releases">Releases</a> · <a href="#quick-start-zh">快速开始</a> · <a href="#documentation-map-zh">文档导航</a> · <a href="./README.md">English README</a> · <a href="https://discord.gg/HTYNjF2y2t">Discord</a>
+  <a href="https://github.com/yaogdu/skill-hub">GitHub</a> · <a href="https://github.com/yaogdu/skill-hub/releases">Releases</a> · <a href="#quick-start-zh">快速开始</a> · <a href="#usage-zh">使用示例</a> · <a href="#documentation-map-zh">文档导航</a>
 </p>
 
 <p align="center">
-  <strong>统一管理、分发和治理</strong> MCP Server、Agent、Skill 与 Prompt 的私有化 Hub。
+  <strong>Agent 时代的企业级能力资产 Hub：</strong>统一发布、解析、分发和治理 MCP Server、Agent、Skill 与 Prompt。
 </p>
 
-`skill-hub` 是一个面向 MCP Server、AI Agent、Skill、Prompt 的统一注册中心与分发中心，重点服务于团队内部沉淀、私有化部署、统一治理和标准化消费。
+---
 
-本项目是基于上游 [`agentregistry`](https://github.com/agentregistry-dev/agentregistry) 的二次开发开源分支。我们保留了它在 registry、CLI、Web UI 方面的核心能力，同时把产品形态进一步收敛到更适合企业内部资产治理和分发的方向：
+## 30 秒理解
 
-- 自托管 / 私有化部署优先
-- 面向 skill 分发和 SHUB 工作流优化
-- 增强登录、角色、API Key 与后台治理能力
-- 支持从 GitHub / GitLab 等远端源回源拉取并镜像入库
+`skill-hub` 是一个面向企业内部的 AI 能力资产注册中心和分发中心。
 
-如果你希望在公司内部搭建一个统一的 skill / agent 资产中心，让团队成员通过一个 Dashboard 和一套 CLI 来发布、查找、拉取、安装、同步和治理 AI 资产，`skill-hub` 就是为这个场景准备的。
+它要解决的问题是：团队开始自研 Agent 之后，Prompt、Skill、MCP Server、Agent 配置会散落在 Git 仓库、脚本、文档、个人机器和 CI/CD 里，缺少统一的版本、权限、审计和复用入口。
+
+你可以把它理解成 Agent 时代的内部 Nexus / 制品库：
+
+- 平台团队把可信的 MCP、Skill、Prompt、Agent 资产发布到一个私有 registry
+- 开发者通过 Web UI、`arctl` 或 `npx @yaogdu-skill-hub/shub` 查找、安装和切换固定版本
+- CI/CD 在构建 Agent 时解析 `shub.dependencies`，生成 `shub.lock`，保证发布可复现
+- 企业通过用户、API Key、fallback source 和包存储策略统一治理资产来源和使用方式
+
+`skill-hub` 不负责运行 MCP Server 或 Agent。运行时部署、流量路由、灰度发布和环境编排仍然应该交给 Kubernetes、CI/CD、IDE MCP 配置、agentgateway 或企业已有平台。`skill-hub` 负责的是资产发布、版本解析、包存储、权限治理和客户端配置导出。
 
 ---
 
-## 这个项目解决什么问题？
+## 带来什么价值？
 
-在很多团队里，MCP Server、Agent、Skill、Prompt 往往散落在：
+| 角色 | 价值 |
+|---|---|
+| 平台 / 架构团队 | 建立统一可信的 AI 能力资产目录，控制哪些 MCP、Skill、Prompt、Agent 可以被团队使用 |
+| Agent 开发者 | 像依赖 jar 包一样声明和锁定 Agent 依赖，减少手工复制配置和脚本 |
+| 业务研发团队 | 快速发现已经沉淀好的能力，按固定版本拉取和复用 |
+| 安全 / 运维团队 | 用账号、API Key、私有存储、fallback source 和审计信息管理资产生命周期 |
+| CI/CD 流水线 | 在构建和发布时自动解析依赖、校验 lockfile、发布 SHUB 包，提升可复现性 |
 
-- GitHub / GitLab 仓库
-- npm / PyPI / Docker Hub
-- 团队文档和 IM 对话
-- 每个开发者自己的本地目录
+典型场景：
 
-常见问题包括：
-
-- 不知道哪个版本能用、哪个地址可信
-- 新同学接手时，需要手动复制一堆脚本和配置
-- Skill 存在于远端仓库里，但团队内部没有统一镜像和治理
-- 不同 IDE / AI 客户端接入方式各不相同
-- 发布、回滚、权限控制和审计都缺少统一入口
-
-`skill-hub` 把这些能力统一到一个服务里：你可以把 Skill、Agent、MCP Server、Prompt 收敛到一个私有 registry 中，通过 UI 和 CLI 统一发布、发现、拉取、同步和管理。
-
----
-
-## 与 agentregistry 的关系
-
-本项目不是从零重写，而是基于 `agentregistry` 进行二开，目标是：
-
-- 保留其原有 registry / CLI / Web UI 基础能力
-- 在用户体验上更聚焦于 Skill Hub 场景
-- 更适合公司内部私有化、自托管和权限治理
-
-当前 `skill-hub` 的定位可以理解为：
-
-> 一个基于 `agentregistry` 演进而来的、面向企业内部 AI 资产治理与 Skill 分发的私有化版本。
-
-如果你准备把它放到公司内部使用，推荐在文档、介绍和对外说明中明确：
-
-- 上游来源：`agentregistry`
-- 当前项目：`skill-hub`
-- 当前目标：企业内部私有化部署、统一分发、统一治理
+- 公司内部建设统一 Skill / Agent / MCP 资产中心
+- 自研 Agent 需要依赖固定版本的 Prompt、MCP Server 或其他 Skill
+- 希望把 GitHub / GitLab / 内部仓库里的 Skill 第一次使用时镜像到私有 registry
+- 希望 Codex、Claude Code、Cursor、Aider 等工具从统一位置消费企业批准的能力
+- 需要私有化部署、API Key、用户角色、可配置存储和可控上游来源
 
 ---
 
-## 适用场景
+## 核心概念
 
-`skill-hub` 特别适合下面这些场景：
+### Asset
 
-- 公司内部搭建统一的 Skill / Agent / MCP 资产中心
-- 团队希望通过 API Key、用户角色和后台管理页面统一治理发布权限
-- 需要把 GitHub / GitLab 上的 Skill 在第一次拉取时自动同步到本地 registry
-- 需要给 Codex、Claude Code、Cursor、Aider 等工具提供统一的 Skill 消费入口
-- 需要一个可私有部署、可控存储路径、可自定义上游源的内部平台
+`skill-hub` 用统一的 Asset 模型管理 AI 能力资产，目前主要覆盖：
 
+- `prompt`：可复用提示词、规范、操作手册
+- `skill` / SHUB package：以 `SKILL.md` 为入口的能力包
+- `mcp`：MCP Server 配置或 MCP 资产包
+- `agent`：Agent 蓝图、依赖声明和配置资产
+
+### SHUB Package
+
+SHUB 包是 `skill-hub` 推荐的发布格式。一个包以 `SKILL.md` 为入口，frontmatter 中声明资产 ID、版本、类型、运行时、导出方式和依赖。
+
+最小示例：
+
+```md
 ---
+name: java-analyzer
+description: Analyze Java services and produce architecture guidance.
+version: 1.2.0
+allowed-tools:
+  - Read
+  - Grep
+shub:
+  schemaVersion: shub.skill/v1alpha1
+  id: platform/java-analyzer
+  category: prompt
+  entry:
+    kind: skill-body
+    path: SKILL.md
+  runtime:
+    type: none
+  dependencies:
+    prompts:
+      - platform/review-prompt@1.4.0
+    mcps:
+      - id: platform/postgres-mcp
+        version: 2.0.1
+        category: mcp
+  exports:
+    - target: codex
+      mode: prompt-file
+      source: SKILL.md
+---
+# Java Analyzer
 
-## 核心能力
-
-### 1. 统一资产注册与发现
-
-支持把以下内容纳入统一 registry：
-
-- MCP Servers
-- AI Agents
-- Skills / SHUB Packages
-- Prompts
-
-团队成员可以通过：
-
-- Dashboard
-- `arctl`
-- `npx @yaogdu-skill-hub/shub`
-- API
-
-来查询、浏览和使用这些资产。
-
-### 2. SHUB 工作流
-
-支持标准的 SHUB 打包、发布、安装、同步流程：
-
-```bash
-arctl shub lint ./skills/ai-agent-learning-system
-arctl shub resolve ./skills/ai-agent-learning-system
-arctl shub package ./skills/ai-agent-learning-system
-arctl shub deploy ./dist/ai-agent-learning-system-1.0.0.tar.gz
-
-npx @yaogdu-skill-hub/shub search ai-agent
-npx @yaogdu-skill-hub/shub add yaogdu/ai-agent-learning-system
-npx @yaogdu-skill-hub/shub use yaogdu/ai-agent-learning-system@1.0.0
+Analyze Java services and produce architecture guidance.
 ```
 
-Agent 或 Skill 可以在 `SKILL.md` 的 `shub.dependencies` 中声明固定版本依赖，例如 Prompt、MCP Server 或其他 Skill。`arctl shub resolve ./asset-dir` 会基于当前配置的 registry 把这些 `asset-id@version` 解析成 `shub.lock`，CI 中可以使用 `arctl shub resolve ./asset-dir --check` 检查 lockfile 是否过期。依赖声明里不内嵌 registry 地址或用户名密码；解析时复用 CLI 的 `--registry-url` / `ARCTL_API_BASE_URL` / `SHUB_API_BASE_URL` 以及 `--registry-token` / `ARCTL_API_TOKEN` / `SHUB_API_TOKEN`。
-
-这里的 `arctl shub deploy` 是历史兼容命名，本质是把 SHUB 包发布到 registry，并不会把 MCP Server 或 Agent 部署到 Docker / Kubernetes。
-
-### 3. 远端回源与镜像入库
-
-当 registry 本地没有某个 Skill 时，`shub add` 可以按照配置的 fallback source 去远端查找，例如：
-
-- GitHub
-- GitLab
-- 内部代码托管平台
-
-拉取成功后，服务端会：
-
-1. 从远端拉取内容
-2. 自动打包
-3. 存储到 registry 管理的存储目录
-4. 同步发布一份到本地 registry
-
-这样同一个 Skill 第一次从远端拉取后，后续团队成员就可以直接从内部 registry 使用。
-
-### 4. 登录、角色与 API Key
-
-当前已经支持基础权限模型：
-
-- 管理员
-  - 默认账号密码：`admin` / `admin`
-  - 可创建普通用户
-  - 可管理所有资产
-  - 可配置 fallback sources
-  - 可控制 API Key 校验开关
-- 普通用户
-  - 可以查看所有内容
-  - 只能修改和删除自己拥有的内容
-  - 可以生成自己的 API Key
-
-CLI 和 npm wrapper 都支持通过环境变量读取 API Key。
-
-### 5. 私有化部署友好
-
-当前项目对部署 skill-hub 服务本身做了明确支持：
-
-- 支持 Docker Compose 启动
-- 支持 Helm / Kubernetes 部署
-- Skill 包存储目录可配置
-- fallback source 可配置
-- 是否启用匿名读取 / API Key 校验可配置
-- 适合作为团队内部基础设施长期运行
-
-skill-hub 不负责运行时部署 MCP Server 或 Agent。运行、流量路由、灰度发布和环境编排应该交给企业已有的 CI/CD、Kubernetes、IDE MCP 配置、agentgateway 或其他运行时平台；skill-hub 负责资产发布、版本解析、包存储、权限治理和客户端配置导出。
+依赖声明不写 registry 地址和用户名密码。CLI 会通过 `--registry-url` / `ARCTL_API_BASE_URL` / `SHUB_API_BASE_URL` 以及 `--registry-token` / `ARCTL_API_TOKEN` / `SHUB_API_TOKEN` 连接对应的私有 registry。
 
 ---
 
 <a id="quick-start-zh"></a>
 ## 快速开始
 
-### 前置依赖
+### 方式一：本地从源码启动
+
+适合本地体验、开发和 PoC。
+
+前置依赖：
 
 - Docker Desktop
 - Docker Compose v2+
-
-### 1) 构建服务镜像
-
-```bash
-docker build \
-  -f docker/server.Dockerfile \
-  -t localhost:5001/agentregistry-dev/agentregistry/server:dev \
-  .
-```
-
-### 2) 启动服务
+- Go 1.25+
 
 ```bash
-env VERSION=dev DOCKER_REGISTRY=localhost:5001 docker compose \
-  -f internal/daemon/docker-compose.yml \
-  up -d
+git clone https://github.com/yaogdu/skill-hub.git
+cd skill-hub
+make run-docker
 ```
 
-默认 Dashboard 地址：
+启动后访问：
 
-- `http://localhost:12121`
+- Dashboard: `http://localhost:12121`
+- API: `http://localhost:12121/v0`
 
-默认情况下，Compose 会把上传的 SHUB 包落到宿主机：
+默认管理员账号：
+
+- 用户名：`admin`
+- 密码：`admin`
+
+上传的 SHUB 包默认持久化到宿主机：
 
 - `${HOME}/Documents/skill-storage`
 
-容器内挂载路径为：
+### 方式二：Kubernetes / Helm 部署
 
-- `/var/lib/agentregistry/storage`
+适合私有化环境、团队共享环境和长期运行。
 
-这套方式比较适合本地验证和内部 PoC；如果是正式私有化部署，建议挂载持久化磁盘或对象存储前置层。
+```bash
+helm install skill-hub oci://ghcr.io/yaogdu/skill-hub/charts/agentregistry \
+  --version 0.2.2 \
+  --set config.jwtPrivateKey=$(openssl rand -hex 32)
+```
 
----
+默认 chart 会启动一个内置 PostgreSQL，适合评估环境。生产环境建议使用外部 PostgreSQL，并挂载持久化存储：
 
-## 首次登录
-
-启动后：
-
-1. 打开 `http://localhost:12121`
-2. 使用默认管理员登录
-3. 默认账号：`admin`
-4. 默认密码：`admin`
-
-登录后可以在 `Settings` 中管理：
-
-- API Keys
-- Users
-- Fallback Sources
-- API Key 校验开关
+```bash
+helm install skill-hub oci://ghcr.io/yaogdu/skill-hub/charts/agentregistry \
+  --version 0.2.2 \
+  --set config.jwtPrivateKey=$(openssl rand -hex 32) \
+  --set database.postgres.bundled.enabled=false \
+  --set database.postgres.url=postgres://<user>:<password>@<host>:5432/<dbname>
+```
 
 ---
 
-## CLI / npm Wrapper 配置
+## 配置 CLI
 
-创建 API Key 后，可以配置环境变量：
+安装 `arctl`：
 
-### zsh / bash
+```bash
+curl -fsSL https://raw.githubusercontent.com/yaogdu/skill-hub/main/scripts/get-arctl | bash
+arctl version
+```
+
+在 Dashboard 的 `Settings` 页面创建 API Key，然后配置环境变量。
+
+zsh / bash：
 
 ```bash
 export SHUB_API_BASE_URL=http://localhost:12121/v0
@@ -257,7 +200,7 @@ export ARCTL_API_BASE_URL=http://localhost:12121/v0
 export ARCTL_API_TOKEN=<your-api-key>
 ```
 
-### fish
+fish：
 
 ```fish
 set -gx SHUB_API_BASE_URL http://localhost:12121/v0
@@ -266,101 +209,178 @@ set -gx ARCTL_API_BASE_URL http://localhost:12121/v0
 set -gx ARCTL_API_TOKEN <your-api-key>
 ```
 
-这样你就可以同时使用：
+之后可以使用：
 
-- `arctl`
-- `npx @yaogdu-skill-hub/shub`
-
-访问同一个私有 registry。
+- `arctl`：完整 CLI
+- `npx @yaogdu-skill-hub/shub`：面向 SHUB 安装、搜索和使用的 npm wrapper
 
 ---
 
-## Fallback Source 机制
+<a id="usage-zh"></a>
+## 使用示例
 
-当你执行：
+仓库里已经带了可打包示例，位于 [`examples/shub/`](./examples/shub/)。
+
+### 1. 校验并打包一个 Skill
 
 ```bash
-npx @yaogdu-skill-hub/shub add <asset-id>
+arctl shub lint examples/shub/native-skill
+arctl shub resolve examples/shub/native-skill
+arctl shub package examples/shub/native-skill
 ```
 
-如果本地 registry 没有该内容，客户端会自动尝试 fallback source。
+默认会生成：
 
-当前支持两类来源：
+```text
+examples/shub/native-skill/dist/examples-native-skill-1.0.0.tar.gz
+```
 
-- 内置来源
-  - `github-direct`
-  - `github-skills-main`
-  - `github-plugin-skills-main`
-  - `openai-skills`
-  - `anthropic-skills`
-- 管理员在后台配置的自定义来源
-
-额外用法：
+### 2. 发布到私有 registry
 
 ```bash
-# 只走 GitHub 相关回源逻辑
+arctl shub deploy examples/shub/native-skill/dist/examples-native-skill-1.0.0.tar.gz
+```
+
+`deploy` 是历史兼容命名，这里表示“发布 SHUB 包到 registry”，不是把 MCP Server 或 Agent 部署到 Docker / Kubernetes。
+
+### 3. 搜索、安装和切换版本
+
+```bash
+npx @yaogdu-skill-hub/shub search native
+npx @yaogdu-skill-hub/shub add examples/native-skill
+npx @yaogdu-skill-hub/shub use examples/native-skill@1.0.0
+npx @yaogdu-skill-hub/shub doctor
+```
+
+安装后的资产会落到本地 `~/.shub`，并根据 `SKILL.md` 的 `shub.exports` 导出给 Codex、Claude Code、Cursor 或 Aider 等工具消费。
+
+### 4. 在 Agent / Skill 中声明依赖
+
+在 `SKILL.md` 中声明固定版本依赖：
+
+```yaml
+shub:
+  dependencies:
+    prompts:
+      - platform/review-prompt@1.4.0
+    skills:
+      - platform/java-analyzer@1.2.0
+    mcps:
+      - id: platform/postgres-mcp
+        version: 2.0.1
+        category: mcp
+```
+
+本地或 CI 中解析依赖：
+
+```bash
+arctl shub resolve ./agent-dir
+arctl shub resolve ./agent-dir --check
+```
+
+`resolve` 会根据当前 registry 配置解析依赖并写入 `shub.lock`。`--check` 适合放进 CI，用来阻止 lockfile 过期的构建。
+
+### 5. 使用 fallback source 回源
+
+当 registry 本地没有某个 Skill 时，客户端可以从内置或管理员配置的 fallback source 回源。
+
+```bash
+# 使用 GitHub 相关内置来源
 npx @yaogdu-skill-hub/shub add unfallenwill/supercoder -g
 
 # 指定某个命名来源
 npx @yaogdu-skill-hub/shub add arch/java-analyzer --fallback-source github-main
 ```
 
-这套机制适合“用户不确定 Skill 是否已经入库，但又希望直接尝试拉取”的场景。
+回源成功后，服务端会拉取远端内容、打包、存储并镜像发布到本地 registry。后续团队成员就可以直接从内部 registry 使用同一个资产。
 
 ---
 
-## Dashboard 能做什么
+## 推荐工作流
 
-当前 Dashboard 适合做团队内部运营后台，主要支持：
+### 作者发布资产
 
-- 浏览 Skills / Agents / MCP Servers / Prompts
-- 登录与鉴权
-- API Key 管理
-- 用户管理
-- Fallback Source 管理
+```text
+编写 SKILL.md
+  -> arctl shub lint
+  -> arctl shub resolve
+  -> arctl shub package
+  -> arctl shub deploy
+  -> skill-hub registry 存储版本和包
+```
+
+### 使用者消费资产
+
+```text
+npx @yaogdu-skill-hub/shub search
+  -> npx @yaogdu-skill-hub/shub add
+  -> npx @yaogdu-skill-hub/shub use asset@version
+  -> 导出到 Codex / Claude Code / Cursor / Aider
+```
+
+### CI/CD 集成
+
+```text
+提交 Agent / Skill 代码
+  -> CI 执行 arctl shub lint
+  -> CI 执行 arctl shub resolve --check
+  -> CI 打包并发布 SHUB 包
+  -> 下游环境按 shub.lock 拉取固定版本资产
+```
+
+---
+
+## Dashboard 能做什么？
+
+Dashboard 适合作为团队内部运营后台：
+
+- 浏览 MCP Server、Agent、Skill、Prompt
+- 管理用户和 API Key
+- 管理 fallback sources
 - 控制匿名读取与 API Key 校验策略
+- 查看和维护 registry 中的资产
 
-推荐的页面结构是：
+---
 
-- 左侧导航
-- 右侧内容区
-- Settings 下拆分独立页面进行管理
+## 边界说明
 
-这更适合持续运维，而不是只做一次性演示。
+`skill-hub` 是资产 registry，不是运行时平台。
+
+它负责：
+
+- 发布和存储 SHUB 包
+- 维护资产元数据、版本和搜索索引
+- 解析 `shub.dependencies` 并生成 `shub.lock`
+- 管理用户、API Key 和 fallback source
+- 导出配置给 Codex、Claude Code、Cursor、Aider 等工具
+
+它不负责：
+
+- 运行 MCP Server 或 Agent
+- 替代 Kubernetes / Docker / agentgateway
+- 承担线上流量路由、灰度发布或弹性伸缩
+- 作为通用 OCI 镜像仓库或模型仓库
 
 ---
 
 <a id="documentation-map-zh"></a>
 ## 文档导航
 
-- [`README.md`](./README.md)：英文版总览
-- [`README.zh-CN.md`](./README.zh-CN.md)：中文版总览
-- [`DEVELOPMENT.md`](./DEVELOPMENT.md)：本地开发说明
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md)：架构说明
-- [`RELEASING.md`](./RELEASING.md)：发布说明
-- [`examples/shub/README.md`](./examples/shub/README.md)：SHUB 示例
+- [`README.md`](./README.md)：英文总览
+- [`README.zh-CN.md`](./README.zh-CN.md)：中文总览和快速开始
+- [`examples/shub/README.md`](./examples/shub/README.md)：可打包的 SHUB 示例
 - [`npm/shub/README.md`](./npm/shub/README.md)：npm wrapper 使用说明
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md)：贡献指南
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md)：架构、Asset 模型和 `SKILL.md` 规范
+- [`docs/shub-skill-frontmatter.schema.json`](./docs/shub-skill-frontmatter.schema.json)：`SKILL.md` frontmatter schema
+- [`docs/shub-lock.schema.json`](./docs/shub-lock.schema.json)：`shub.lock` schema
+- [`DEVELOPMENT.md`](./DEVELOPMENT.md)：本地开发说明
+- [`RELEASING.md`](./RELEASING.md)：发布说明
 
 ---
 
-## 开源说明
+## 与 agentregistry 的关系
 
-当前仓库是 `skill-hub` 的开源主仓库，GitHub 仓库地址：
-
-- `https://github.com/yaogdu/skill-hub`
-
-这个项目目前没有单独官网，GitHub 仓库本身就是主要入口，包括：
-
-- 源码
-- Issue
-- Release
-- 使用说明
-- 开源协作
-
-如果你准备对外介绍本项目，建议统一用下面这段描述：
-
-> skill-hub 是一个基于 agentregistry 二次开发的开源项目，主要面向企业内部私有化部署场景，用于统一管理、分发和治理 MCP Server、Agent、Skill 与 Prompt 等 AI 资产。
+本项目是基于上游 [`agentregistry`](https://github.com/agentregistry-dev/agentregistry) 的二次开发开源分支，保留 registry、CLI、Web UI 等基础能力，同时把产品形态进一步收敛到企业内部 Skill Hub、SHUB 包分发、私有化部署、API Key 鉴权和 fallback source 治理。
 
 ---
 
