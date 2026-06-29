@@ -97,8 +97,8 @@ func TestManagerAddUseDoctor(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(homeDir, "state.json")); err != nil {
 		t.Fatalf("state.json missing: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(homeDir, ".lock")); err != nil {
-		t.Fatalf(".lock missing: %v", err)
+	if _, err := os.Stat(filepath.Join(homeDir, ".state.lock")); !os.IsNotExist(err) {
+		t.Fatalf(".state.lock should be released after operation, stat err = %v", err)
 	}
 
 	_, err = manager.Add("demo-skill", "1.1.0")

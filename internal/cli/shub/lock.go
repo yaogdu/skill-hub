@@ -1,15 +1,14 @@
 package shub
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
+	"time"
 )
 
 type stateLock struct {
-	file *os.File
+	path string
 }
 
 func (manager *Manager) withStateLock(fn func() error) error {
@@ -26,24 +25,23 @@ func (manager *Manager) acquireStateLock() (*stateLock, error) {
 		return nil, fmt.Errorf("create SHUB home for lock: %w", err)
 	}
 
-	lockPath := filepath.Join(manager.homeRoot, ".lock")
-	file, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
-	if err != nil {
-		return nil, fmt.Errorf("open SHUB lock file: %w", err)
+	lockPath := filepath.Join(manager.homeRoot, ".state.lock")
+	for {
+		if err := os.Mkdir(lockPath, 0o700); err == nil {
+			return &stateLock{path: lockPath}, nil
+		} else if !os.IsExist(err) {
+			return nil, fmt.Errorf("acquire SHUB lock: %w", err)
+		}
+
+		time.Sleep(50 * time.Millisecond)
 	}
-	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
-		_ = file.Close()
-		return nil, fmt.Errorf("acquire SHUB lock: %w", err)
-	}
-	return &stateLock{file: file}, nil
 }
 
 func (lock *stateLock) Close() error {
-	if lock == nil || lock.file == nil {
+	if lock == nil || lock.path == "" {
 		return nil
 	}
-	unlockErr := syscall.Flock(int(lock.file.Fd()), syscall.LOCK_UN)
-	closeErr := lock.file.Close()
-	lock.file = nil
-	return errors.Join(unlockErr, closeErr)
+	err := os.Remove(lock.path)
+	lock.path = ""
+	return err
 }
