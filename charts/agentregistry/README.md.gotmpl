@@ -9,7 +9,7 @@
 ## TL;DR
 
 ```console
-helm install my-agentregistry oci://ghcr.io/agentregistry-dev/agentregistry/charts/agentregistry \
+helm install my-agentregistry oci://ghcr.io/yaogdu/skill-hub/charts/agentregistry \
   --set config.jwtPrivateKey=$(openssl rand -hex 32)
 ```
 
@@ -31,14 +31,14 @@ It exposes both an HTTP REST API and an Agent Gateway gRPC endpoint. A PostgreSQ
 ### Development / evaluation (bundled database)
 
 ```console
-helm install my-agentregistry oci://ghcr.io/agentregistry-dev/agentregistry/charts/agentregistry \
+helm install my-agentregistry oci://ghcr.io/yaogdu/skill-hub/charts/agentregistry \
   --set config.jwtPrivateKey=$(openssl rand -hex 32)
 ```
 
 ### Production (external database)
 
 ```console
-helm install my-agentregistry oci://ghcr.io/agentregistry-dev/agentregistry/charts/agentregistry \
+helm install my-agentregistry oci://ghcr.io/yaogdu/skill-hub/charts/agentregistry \
   --set config.jwtPrivateKey=$(openssl rand -hex 32) \
   --set database.postgres.bundled.enabled=false \
   --set database.postgres.url=postgres://<user>:<password>@<host>:5432/<dbname>

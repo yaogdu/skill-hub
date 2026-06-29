@@ -23,7 +23,7 @@ tests:
     asserts:
       - matchRegex:
           path: spec.template.spec.containers[0].image
-          pattern: '^ghcr.io/agentregistry-dev/agentregistry/server:[^@\s]+$'
+          pattern: '^ghcr.io/yaogdu/skill-hub/server:[^@\s]+$'
 
   - it: uses digest when image.digest is set
     template: deployment.yaml
@@ -32,7 +32,7 @@ tests:
     asserts:
       - matchRegex:
           path: spec.template.spec.containers[0].image
-          pattern: "^ghcr.io/agentregistry-dev/agentregistry/server@sha256:[0-9a-fA-F]{64}"
+          pattern: "^ghcr.io/yaogdu/skill-hub/server@sha256:[0-9a-fA-F]{64}"
 
 
 

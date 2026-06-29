@@ -23,7 +23,7 @@ image:
   # -- Agent Registry image registry
   registry: ghcr.io
   # -- Agent Registry image repository (org/path, excluding the image name)
-  repository: agentregistry-dev/agentregistry
+  repository: yaogdu/skill-hub
   # -- Agent Registry image name
   name: server
   # -- Agent Registry image tag (immutable tags recommended). Leave empty to use .Chart.AppVersion.

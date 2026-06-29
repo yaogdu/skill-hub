@@ -25,6 +25,6 @@ annotations:
       url: https://github.com/yaogdu/skill-hub
   artifacthub.io/images: |
     - name: agentregistry
-      image: ghcr.io/agentregistry-dev/agentregistry/server:${CHART_VERSION}
+      image: ghcr.io/yaogdu/skill-hub/server:${CHART_VERSION}
     - name: postgresql
       image: docker.io/library/postgres:18
