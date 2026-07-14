@@ -32,7 +32,7 @@ import { AddServerDialog } from "@/components/add-server-dialog"
 import { AddSkillDialog } from "@/components/add-skill-dialog"
 import { AddAgentDialog } from "@/components/add-agent-dialog"
 import { AddPromptDialog } from "@/components/add-prompt-dialog"
-import { listServersV0, listSkillsV0, listAgentsV0, listPromptsV0, ServerResponse, SkillResponse, AgentResponse, PromptResponse } from "@/lib/admin-api"
+import { listServersV0, listSkillsV0, listAgentsV0, listPromptsV0, listAssetsV0, ServerResponse, SkillResponse, AgentResponse, PromptResponse, AssetResponse } from "@/lib/admin-api"
 import MCPIcon from "@/components/icons/mcp"
 import {
   Search,
@@ -78,6 +78,110 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: "agents", label: "Agents", icon: <Bot className="h-3.5 w-3.5" /> },
   { key: "prompts", label: "Prompts", icon: <FileText className="h-3.5 w-3.5" /> },
 ]
+
+const NATIVE_ASSET_CATEGORIES = new Set(["prompt", "agent", "mcp"])
+
+function packageFromAsset(asset: AssetResponse["asset"]) {
+  const source = asset.source
+  if (!source?.packageRef) return undefined
+  return {
+    registryType: source.packageType || "tarball",
+    identifier: source.packageRef,
+    version: asset.version,
+    transport: { type: "streamable-http" },
+  }
+}
+
+function repositoryFromAsset(asset: AssetResponse["asset"]) {
+  if (!asset.source?.repositoryUrl) return undefined
+  return {
+    source: "git",
+    url: asset.source.repositoryUrl,
+  }
+}
+
+function assetToPromptResponse(assetResponse: AssetResponse): PromptResponse {
+  const asset = assetResponse.asset
+  return {
+    _meta: assetResponse._meta,
+    prompt: {
+      name: asset.name || asset.id,
+      description: asset.description,
+      version: asset.version,
+      content: asset.sourceSkill?.body || asset.manifest?.sourceSkill?.body || "",
+    },
+  }
+}
+
+function assetToAgentResponse(assetResponse: AssetResponse): AgentResponse {
+  const asset = assetResponse.asset
+  const pkg = packageFromAsset(asset)
+  return {
+    _meta: assetResponse._meta,
+    agent: {
+      name: asset.name || asset.id,
+      title: asset.id,
+      description: asset.description,
+      version: asset.version,
+      framework: "SHUB",
+      language: asset.manifest?.runtime?.type || "none",
+      image: asset.source?.packageType === "docker" ? asset.source.packageRef || "" : "",
+      modelProvider: "",
+      modelName: "",
+      status: asset.status,
+      repository: repositoryFromAsset(asset),
+      packages: pkg ? [pkg] : undefined,
+    },
+  }
+}
+
+function assetToServerMeta(assetResponse: AssetResponse): ServerResponse["_meta"] {
+  const official = assetResponse._meta?.['io.modelcontextprotocol.registry/official']
+  if (!official) return {}
+  const status = official.status === "deprecated" || official.status === "deleted" ? official.status : "active"
+  return {
+    'io.modelcontextprotocol.registry/official': {
+      status,
+      publishedAt: official.publishedAt,
+      updatedAt: official.updatedAt,
+      isLatest: official.isLatest,
+    },
+  }
+}
+
+function assetToServerResponse(assetResponse: AssetResponse): ServerResponse {
+  const asset = assetResponse.asset
+  const pkg = packageFromAsset(asset)
+  return {
+    _meta: assetToServerMeta(assetResponse),
+    server: {
+      $schema: "https://modelcontextprotocol.io/schemas/draft/2025-07-09/server.json",
+      name: asset.id,
+      title: asset.name,
+      description: asset.description,
+      version: asset.version,
+      repository: repositoryFromAsset(asset),
+      packages: pkg ? [pkg] : undefined,
+    },
+  }
+}
+
+function isNativeCompatibilitySkill(skill: SkillResponse) {
+  const category = skill.skill.shub?.category
+  return category ? NATIVE_ASSET_CATEGORIES.has(category) : false
+}
+
+function mergeByVersionKey<T>(primary: T[], fallback: T[], keyFn: (item: T) => string): T[] {
+  const seen = new Set<string>()
+  const merged: T[] = []
+  for (const item of [...primary, ...fallback]) {
+    const key = keyFn(item)
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(item)
+  }
+  return merged
+}
 
 function getStars(server: ServerResponse): number {
   const publisherProvided = server.server._meta?.['io.modelcontextprotocol.registry/publisher-provided'] as Record<string, unknown> | undefined
@@ -247,6 +351,17 @@ export default function AdminPage() {
       setLoading(true)
       setError(null)
 
+      const allAssets: AssetResponse[] = []
+      let assetCursor: string | undefined
+      do {
+        const { data: assetData } = await listAssetsV0({
+          query: { cursor: assetCursor, limit: 100 },
+          throwOnError: true,
+        })
+        allAssets.push(...assetData.assets)
+        assetCursor = assetData.metadata.nextCursor
+      } while (assetCursor)
+
       const allServers: ServerResponse[] = []
       let serverCursor: string | undefined
       do {
@@ -257,7 +372,15 @@ export default function AdminPage() {
         allServers.push(...serverData.servers)
         serverCursor = serverData.metadata.nextCursor
       } while (serverCursor)
-      setServers(allServers)
+      const assetServers = allAssets
+        .filter((entry) => entry.asset.category === "mcp")
+        .map(assetToServerResponse)
+      const mergedServers = mergeByVersionKey(
+        assetServers,
+        allServers,
+        (entry) => `${entry.server.name}@${entry.server.version}`
+      )
+      setServers(mergedServers)
 
       const allSkills: SkillResponse[] = []
       let skillCursor: string | undefined
@@ -269,7 +392,7 @@ export default function AdminPage() {
         allSkills.push(...skillData.skills)
         skillCursor = skillData.metadata.nextCursor
       } while (skillCursor)
-      const groupedS = groupSkillsByName(allSkills)
+      const groupedS = groupSkillsByName(allSkills.filter((skill) => !isNativeCompatibilitySkill(skill)))
       setGroupedSkills(groupedS)
 
       const allAgents: AgentResponse[] = []
@@ -282,7 +405,14 @@ export default function AdminPage() {
         allAgents.push(...agentData.agents)
         agentCursor = agentData.metadata.nextCursor
       } while (agentCursor)
-      const groupedA = groupAgentsByName(allAgents)
+      const assetAgents = allAssets
+        .filter((entry) => entry.asset.category === "agent")
+        .map(assetToAgentResponse)
+      const groupedA = groupAgentsByName(mergeByVersionKey(
+        assetAgents,
+        allAgents,
+        (entry) => `${entry.agent.name}@${entry.agent.version}`
+      ))
       setGroupedAgents(groupedA)
 
       const allPrompts: PromptResponse[] = []
@@ -295,10 +425,17 @@ export default function AdminPage() {
         allPrompts.push(...promptData.prompts)
         promptCursor = promptData.metadata.nextCursor
       } while (promptCursor)
-      const groupedP = groupPromptsByName(allPrompts)
+      const assetPrompts = allAssets
+        .filter((entry) => entry.asset.category === "prompt")
+        .map(assetToPromptResponse)
+      const groupedP = groupPromptsByName(mergeByVersionKey(
+        assetPrompts,
+        allPrompts,
+        (entry) => `${entry.prompt.name}@${entry.prompt.version}`
+      ))
       setGroupedPrompts(groupedP)
 
-      const grouped = groupServersByName(allServers)
+      const grouped = groupServersByName(mergedServers)
       setGroupedServers(grouped)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch data")
