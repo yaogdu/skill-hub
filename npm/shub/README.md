@@ -2,7 +2,7 @@
 
 `@yaogdu-skill-hub/shub` is the npm wrapper for the SHUB client shipped by `skill-hub`.
 
-It resolves a local `arctl` binary when available and otherwise downloads the matching release artifact from GitHub, verifies its checksum, and forwards commands as:
+It uses the matching `arctl` binary installed through the npm optional platform package when available, falls back to a local `arctl`, and otherwise downloads the matching release artifact from GitHub, verifies its checksum, and forwards commands as:
 
 ```bash
 arctl shub ...

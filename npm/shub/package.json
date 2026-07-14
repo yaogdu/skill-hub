@@ -1,6 +1,6 @@
 {
   "name": "@yaogdu-skill-hub/shub",
-  "version": "0.1.1",
+  "version": "0.2.4",
   "description": "npm wrapper for running SHUB through the skill-hub Go binary",
   "keywords": [
     "shub",
@@ -24,6 +24,13 @@
   "files": [
     "bin/shub.js"
   ],
+  "optionalDependencies": {
+    "@yaogdu-skill-hub/shub-darwin-amd64": "0.2.4",
+    "@yaogdu-skill-hub/shub-darwin-arm64": "0.2.4",
+    "@yaogdu-skill-hub/shub-linux-amd64": "0.2.4",
+    "@yaogdu-skill-hub/shub-linux-arm64": "0.2.4",
+    "@yaogdu-skill-hub/shub-windows-amd64": "0.2.4"
+  },
   "license": "Apache-2.0",
   "publishConfig": {
     "access": "public"
