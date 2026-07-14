@@ -556,6 +556,10 @@ func (c *Client) HasToken() bool {
 	return strings.TrimSpace(c.token) != ""
 }
 
+func (c *Client) Token() string {
+	return strings.TrimSpace(c.token)
+}
+
 func (c *Client) Login(username, password string) (*models.LoginResponse, error) {
 	var resp models.LoginResponse
 	err := c.doJsonRequest(http.MethodPost, "/auth/login", &models.LoginRequest{

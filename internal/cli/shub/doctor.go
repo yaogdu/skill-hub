@@ -18,7 +18,7 @@ such as Claude Code and Aider workspace integration files.`,
 }
 
 func runDoctor(cmd *cobra.Command, args []string) error {
-	manager, err := NewManager(shubHome, apiClient, DefaultSourceInstaller{}, baseURLFromClient())
+	manager, err := NewManager(shubHome, apiClient, defaultSourceInstaller(), baseURLFromClient())
 	if err != nil {
 		return err
 	}

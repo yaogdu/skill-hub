@@ -16,9 +16,22 @@ import (
 	shubskills "github.com/agentregistry-dev/agentregistry/pkg/skills"
 )
 
-type DefaultSourceInstaller struct{}
+type DefaultSourceInstaller struct {
+	BaseURL string
+	Token   string
+}
 
-func (DefaultSourceInstaller) Install(skill *models.SkillResponse, targetDir string) error {
+func defaultSourceInstaller() DefaultSourceInstaller {
+	if apiClient == nil {
+		return DefaultSourceInstaller{}
+	}
+	return DefaultSourceInstaller{
+		BaseURL: apiClient.BaseURL,
+		Token:   apiClient.Token(),
+	}
+}
+
+func (installer DefaultSourceInstaller) Install(skill *models.SkillResponse, targetDir string) error {
 	if skill == nil {
 		return fmt.Errorf("skill metadata is nil")
 	}
@@ -38,7 +51,7 @@ func (DefaultSourceInstaller) Install(skill *models.SkillResponse, targetDir str
 		}
 	}
 	if tarballRef != "" {
-		return installFromTarball(tarballRef, targetDir)
+		return installer.installFromTarball(tarballRef, targetDir)
 	}
 	if dockerImage != "" {
 		return installFromDocker(dockerImage, targetDir)
@@ -53,7 +66,7 @@ func installFromGit(repoURL, targetDir string) error {
 	return gitutil.CloneAndCopy(repoURL, targetDir, false)
 }
 
-func installFromTarball(ref, targetDir string) error {
+func (installer DefaultSourceInstaller) installFromTarball(ref, targetDir string) error {
 	if err := os.MkdirAll(targetDir, 0o755); err != nil {
 		return fmt.Errorf("create target directory: %w", err)
 	}
@@ -68,7 +81,14 @@ func installFromTarball(ref, targetDir string) error {
 	}
 
 	client := &http.Client{Timeout: 2 * time.Minute}
-	resp, err := client.Get(ref) //nolint:gosec // package URL comes from trusted registry metadata configured by the user
+	req, err := http.NewRequest(http.MethodGet, ref, nil) //nolint:gosec // package URL comes from trusted registry metadata configured by the user
+	if err != nil {
+		return fmt.Errorf("build SHUB package request: %w", err)
+	}
+	if token := installer.tokenForPackageURL(ref); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("download SHUB package: %w", err)
 	}
@@ -80,6 +100,34 @@ func installFromTarball(ref, targetDir string) error {
 		return fmt.Errorf("extract downloaded SHUB package: %w", err)
 	}
 	return nil
+}
+
+func (installer DefaultSourceInstaller) tokenForPackageURL(ref string) string {
+	token := strings.TrimSpace(installer.Token)
+	if token == "" || !sameRegistryURL(ref, installer.BaseURL) {
+		return ""
+	}
+	return token
+}
+
+func sameRegistryURL(ref, baseURL string) bool {
+	refURL, err := url.Parse(ref)
+	if err != nil || refURL.Scheme == "" || refURL.Host == "" {
+		return false
+	}
+	base, err := url.Parse(strings.TrimSpace(baseURL))
+	if err != nil || base.Scheme == "" || base.Host == "" {
+		return false
+	}
+	if !strings.EqualFold(refURL.Scheme, base.Scheme) || !strings.EqualFold(refURL.Host, base.Host) {
+		return false
+	}
+	basePath := strings.TrimRight(base.Path, "/")
+	if basePath == "" {
+		return true
+	}
+	refPath := strings.TrimRight(refURL.Path, "/")
+	return refPath == basePath || strings.HasPrefix(refPath, basePath+"/")
 }
 
 func resolveLocalArchivePath(ref string) (string, bool, error) {

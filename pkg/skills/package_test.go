@@ -64,6 +64,42 @@ shub:
 	}
 }
 
+func TestBuildPackageSkipsDistDirectory(t *testing.T) {
+	dir := t.TempDir()
+	writePackageFixtureFile(t, filepath.Join(dir, "SKILL.md"), `---
+name: helper-skill
+description: Helpful prompt skill
+version: 1.2.3
+shub:
+  schemaVersion: shub.skill/v1alpha1
+  id: local/helper-skill
+  category: prompt
+  entry:
+    kind: skill-body
+    path: SKILL.md
+  runtime:
+    type: none
+---
+# Helper Skill
+`)
+	writePackageFixtureFile(t, filepath.Join(dir, "dist", "helper-skill-1.2.3.tar.gz"), "old archive\n")
+	writePackageFixtureFile(t, filepath.Join(dir, "dist", "notes.txt"), "generated note\n")
+
+	archivePath := filepath.Join(dir, "dist", "helper-skill-1.2.3.tar.gz")
+	result, err := BuildPackage(dir, archivePath)
+	if err != nil {
+		t.Fatalf("BuildPackage() error = %v", err)
+	}
+	for _, file := range result.Files {
+		if strings.HasPrefix(file, "dist/") {
+			t.Fatalf("package files = %#v, want dist files skipped", result.Files)
+		}
+	}
+	if _, err := os.Stat(archivePath); err != nil {
+		t.Fatalf("archive missing: %v", err)
+	}
+}
+
 func TestExamplePackagesValidateAndBuild(t *testing.T) {
 	examplesDir := filepath.Join("..", "..", "examples", "shub")
 	entries, err := os.ReadDir(examplesDir)

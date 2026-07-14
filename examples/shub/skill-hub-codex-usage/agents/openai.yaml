@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Hub Codex Usage"
+  short_description: "Operate team Skill Hub from Codex"
+  default_prompt: "Use $skill-hub-codex-usage to connect Codex to the team Skill Hub test environment."

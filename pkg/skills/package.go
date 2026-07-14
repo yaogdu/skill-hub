@@ -257,16 +257,13 @@ func shouldSkipPackagePath(relativePath string, info os.FileInfo) bool {
 	if clean == "" {
 		return false
 	}
-	for _, prefix := range []string{".git", ".shub"} {
+	for _, prefix := range []string{".git", ".shub", "dist"} {
 		if clean == prefix || strings.HasPrefix(clean, prefix+"/") {
 			return true
 		}
 	}
 	if strings.HasSuffix(clean, "/.DS_Store") || clean == ".DS_Store" {
 		return true
-	}
-	if info.IsDir() && (clean == "dist" || strings.HasPrefix(clean, "dist/")) {
-		return false
 	}
 	return false
 }

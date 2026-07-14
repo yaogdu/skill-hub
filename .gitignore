@@ -50,9 +50,12 @@ Thumbs.db
 .env.local
 .env.staging
 .env.production
+docs/skill-hub-team-usage.private.md
+scripts/skill-hub-test-env.private.sh
+examples/shub/*/dist/
+examples/shub/*/shub.lock
 
 # Generated Helm chart manifest
 charts/agentregistry/Chart.yaml
 
 _output/
-

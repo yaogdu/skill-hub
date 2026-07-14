@@ -30,7 +30,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if err := requireSHUBTokenForRegistryRead(); err != nil {
 		return err
 	}
-	manager, err := NewManager(shubHome, apiClient, DefaultSourceInstaller{}, apiClient.BaseURL)
+	manager, err := NewManager(shubHome, apiClient, defaultSourceInstaller(), apiClient.BaseURL)
 	if err != nil {
 		return err
 	}
