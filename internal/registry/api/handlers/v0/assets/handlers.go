@@ -79,7 +79,7 @@ func RegisterAssetsEndpoints(api huma.API, pathPrefix string, assetSvc assetsvc.
 		if input.Category != "" {
 			category := assetmodels.AssetCategory(input.Category)
 			if !category.IsValid() {
-				return nil, huma.Error400BadRequest("Invalid category: expected prompt, agent, or mcp")
+				return nil, huma.Error400BadRequest("Invalid category: expected prompt, skill, agent, or mcp")
 			}
 			filter.Category = &category
 		}

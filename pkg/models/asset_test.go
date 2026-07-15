@@ -59,6 +59,26 @@ func TestAssetPublishRequestToAssetRejectsInvalidPromptManifest(t *testing.T) {
 	}
 }
 
+func TestAssetPublishRequestToAssetAcceptsSkillCategory(t *testing.T) {
+	asset, err := (AssetPublishRequest{Manifest: AssetManifest{
+		SchemaVersion: ShubAssetSchemaVersion,
+		ID:            "arch/java-analyzer",
+		Category:      AssetCategorySkill,
+		Name:          "java-analyzer",
+		Description:   "Analyze Java services",
+		Version:       "1.2.0",
+		SourceSkill:   AssetSourceSkill{Path: SkillFileName, BodyFormat: "markdown"},
+		Entry:         AssetEntry{Kind: "skill-body", Path: SkillFileName},
+		Runtime:       AssetRuntime{Type: "none"},
+	}}).ToAsset()
+	if err != nil {
+		t.Fatalf("ToAsset() error = %v", err)
+	}
+	if asset.Category != AssetCategorySkill {
+		t.Fatalf("asset category = %q, want %q", asset.Category, AssetCategorySkill)
+	}
+}
+
 func TestPromptResponseFromAssetResponse(t *testing.T) {
 	prompt, err := PromptResponseFromAssetResponse(&AssetResponse{
 		Asset: Asset{

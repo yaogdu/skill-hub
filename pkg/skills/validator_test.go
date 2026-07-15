@@ -40,6 +40,38 @@ Use this skill for guidance.
 	}
 }
 
+func TestLoadAssetDir_ValidNativeSkillCategory(t *testing.T) {
+	dir := t.TempDir()
+	writeSkillFile(t, dir, `---
+name: helper-skill
+description: Helpful native skill
+version: 1.0.0
+shub:
+  schemaVersion: shub.skill/v1alpha1
+  id: local/helper-skill
+  category: skill
+  entry:
+    kind: skill-body
+    path: SKILL.md
+  runtime:
+    type: none
+  exports:
+    - target: codex
+      mode: skill-dir
+      source: .
+---
+# Helper Skill
+`)
+
+	asset, err := LoadAssetDir(dir)
+	if err != nil {
+		t.Fatalf("LoadAssetDir() error = %v", err)
+	}
+	if string(asset.Category) != "skill" {
+		t.Fatalf("Category = %q, want skill", asset.Category)
+	}
+}
+
 func TestLoadAssetDir_ValidAgentSkill(t *testing.T) {
 	dir := t.TempDir()
 	mustMkdirAll(t, filepath.Join(dir, "bin"))

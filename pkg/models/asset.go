@@ -38,13 +38,14 @@ type AssetCategory string
 
 const (
 	AssetCategoryPrompt AssetCategory = "prompt"
+	AssetCategorySkill  AssetCategory = "skill"
 	AssetCategoryAgent  AssetCategory = "agent"
 	AssetCategoryMCP    AssetCategory = "mcp"
 )
 
 func (category AssetCategory) IsValid() bool {
 	switch category {
-	case AssetCategoryPrompt, AssetCategoryAgent, AssetCategoryMCP:
+	case AssetCategoryPrompt, AssetCategorySkill, AssetCategoryAgent, AssetCategoryMCP:
 		return true
 	default:
 		return false
@@ -408,12 +409,13 @@ func (frontmatter SkillFrontmatterShub) validate() error {
 
 func validateManifestSemantics(manifest AssetManifest) error {
 	switch manifest.Category {
-	case AssetCategoryPrompt:
+	case AssetCategoryPrompt, AssetCategorySkill:
+		label := string(manifest.Category)
 		if manifest.Entry.Kind != "skill-body" {
-			return fmt.Errorf("prompt assets must use entry.kind=skill-body")
+			return fmt.Errorf("%s assets must use entry.kind=skill-body", label)
 		}
 		if manifest.Runtime.Type != "none" {
-			return fmt.Errorf("prompt assets must use runtime.type=none")
+			return fmt.Errorf("%s assets must use runtime.type=none", label)
 		}
 	case AssetCategoryMCP:
 		if manifest.Entry.Kind != "mcp-config" && manifest.Entry.Kind != "command" {
@@ -433,7 +435,7 @@ func validateDependencies(dependencies AssetDependencies) error {
 		refs     []AssetDependencyRef
 	}{
 		{field: "dependencies.prompts", category: AssetCategoryPrompt, refs: dependencies.Prompts},
-		{field: "dependencies.skills", refs: dependencies.Skills},
+		{field: "dependencies.skills", category: AssetCategorySkill, refs: dependencies.Skills},
 		{field: "dependencies.mcps", category: AssetCategoryMCP, refs: dependencies.MCPs},
 		{field: "dependencies.agents", category: AssetCategoryAgent, refs: dependencies.Agents},
 	}

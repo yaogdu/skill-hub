@@ -173,7 +173,7 @@ func flattenDependencies(dependencies models.AssetDependencies) []models.AssetDe
 	}
 	groups := []dependencyGroup{
 		{category: models.AssetCategoryPrompt, refs: dependencies.Prompts},
-		{refs: dependencies.Skills},
+		{category: models.AssetCategorySkill, refs: dependencies.Skills},
 		{category: models.AssetCategoryMCP, refs: dependencies.MCPs},
 		{category: models.AssetCategoryAgent, refs: dependencies.Agents},
 	}

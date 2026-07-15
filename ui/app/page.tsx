@@ -79,7 +79,7 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: "prompts", label: "Prompts", icon: <FileText className="h-3.5 w-3.5" /> },
 ]
 
-const NATIVE_ASSET_CATEGORIES = new Set(["prompt", "agent", "mcp"])
+const NATIVE_ASSET_CATEGORIES = new Set(["prompt", "skill", "agent", "mcp"])
 
 function packageFromAsset(asset: AssetResponse["asset"]) {
   const source = asset.source
@@ -109,6 +109,31 @@ function assetToPromptResponse(assetResponse: AssetResponse): PromptResponse {
       description: asset.description,
       version: asset.version,
       content: asset.sourceSkill?.body || asset.manifest?.sourceSkill?.body || "",
+    },
+  }
+}
+
+function assetToSkillResponse(assetResponse: AssetResponse): SkillResponse {
+  const asset = assetResponse.asset
+  const pkg = packageFromAsset(asset)
+  return {
+    _meta: assetResponse._meta,
+    skill: {
+      name: asset.name || asset.id,
+      title: asset.id,
+      category: asset.category,
+      description: asset.description,
+      version: asset.version,
+      status: asset.status,
+      repository: repositoryFromAsset(asset),
+      packages: pkg ? [pkg] : undefined,
+      shub: {
+        assetId: asset.id,
+        category: asset.category,
+        manifest: asset.manifest,
+        schemaVersion: asset.manifest?.schemaVersion,
+        source: asset.source,
+      },
     },
   }
 }
@@ -392,7 +417,14 @@ export default function AdminPage() {
         allSkills.push(...skillData.skills)
         skillCursor = skillData.metadata.nextCursor
       } while (skillCursor)
-      const groupedS = groupSkillsByName(allSkills.filter((skill) => !isNativeCompatibilitySkill(skill)))
+      const assetSkills = allAssets
+        .filter((entry) => entry.asset.category === "skill")
+        .map(assetToSkillResponse)
+      const groupedS = groupSkillsByName(mergeByVersionKey(
+        assetSkills,
+        allSkills.filter((skill) => !isNativeCompatibilitySkill(skill)),
+        (entry) => `${entry.skill.name}@${entry.skill.version}`
+      ))
       setGroupedSkills(groupedS)
 
       const allAgents: AgentResponse[] = []

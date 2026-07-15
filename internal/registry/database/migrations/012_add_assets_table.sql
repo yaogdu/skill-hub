@@ -30,7 +30,7 @@ ALTER TABLE assets ADD CONSTRAINT check_asset_status_valid
     CHECK (status IN ('active', 'deprecated', 'deleted'));
 
 ALTER TABLE assets ADD CONSTRAINT check_asset_category_valid
-    CHECK (category IN ('prompt', 'agent', 'mcp'));
+    CHECK (category IN ('prompt', 'skill', 'agent', 'mcp'));
 
 ALTER TABLE assets ADD CONSTRAINT check_asset_version_not_empty
     CHECK (length(trim(version)) > 0);

@@ -1058,7 +1058,7 @@ export type ListAssetsV0Data = {
         /**
          * Filter by asset category
          */
-        category?: 'prompt' | 'agent' | 'mcp';
+        category?: 'prompt' | 'skill' | 'agent' | 'mcp';
     };
     url: '/v0/assets';
 };

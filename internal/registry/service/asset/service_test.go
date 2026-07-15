@@ -287,6 +287,33 @@ func TestListAssets_ReturnsOnlySHUBSkills(t *testing.T) {
 	}
 }
 
+func TestListAssets_FiltersNativeSkillCategory(t *testing.T) {
+	now := time.Date(2026, time.January, 2, 3, 4, 5, 0, time.UTC)
+	service := New(Dependencies{Skills: &fakeSkillsRegistry{
+		listSkillsFn: func(context.Context, *database.SkillFilter, string, int) ([]*models.SkillResponse, string, error) {
+			return []*models.SkillResponse{
+				shubSkillResponseWithCategory("java-analyzer", "arch/java-analyzer", "1.2.0", models.AssetCategorySkill, now),
+				shubSkillResponse("prompt-helper", "arch/prompt-helper", "1.0.0", now),
+			}, "", nil
+		},
+	}})
+
+	category := models.AssetCategorySkill
+	assets, next, err := service.ListAssets(context.Background(), &Filter{Category: &category}, "", 30)
+	if err != nil {
+		t.Fatalf("ListAssets() error = %v", err)
+	}
+	if next != "" {
+		t.Fatalf("NextCursor = %q, want empty", next)
+	}
+	if len(assets) != 1 {
+		t.Fatalf("len(assets) = %d, want 1", len(assets))
+	}
+	if assets[0].Asset.Category != models.AssetCategorySkill {
+		t.Fatalf("asset category = %q, want %q", assets[0].Asset.Category, models.AssetCategorySkill)
+	}
+}
+
 func TestUploadAssetPackage_ValidatesAndStoresArchive(t *testing.T) {
 	archivePath := buildTestPackageArchive(t, "arch/java-analyzer", "1.2.0")
 	archiveBytes, err := os.ReadFile(archivePath)
@@ -504,6 +531,10 @@ func legacySkillResponse(name, version string) *models.SkillResponse {
 }
 
 func shubSkillResponse(name, assetID, version string, updatedAt time.Time) *models.SkillResponse {
+	return shubSkillResponseWithCategory(name, assetID, version, models.AssetCategoryPrompt, updatedAt)
+}
+
+func shubSkillResponseWithCategory(name, assetID, version string, category models.AssetCategory, updatedAt time.Time) *models.SkillResponse {
 	return &models.SkillResponse{
 		Skill: models.SkillJSON{
 			Name:        name,
@@ -512,11 +543,11 @@ func shubSkillResponse(name, assetID, version string, updatedAt time.Time) *mode
 			SHUB: &models.SkillSHUBMetadata{
 				SchemaVersion: models.ShubAssetSchemaVersion,
 				AssetID:       assetID,
-				Category:      models.AssetCategoryPrompt,
+				Category:      category,
 				Manifest: &models.AssetManifest{
 					SchemaVersion: models.ShubAssetSchemaVersion,
 					ID:            assetID,
-					Category:      models.AssetCategoryPrompt,
+					Category:      category,
 					Name:          name,
 					Description:   "Analyze Java services",
 					Version:       version,

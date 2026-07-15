@@ -1219,7 +1219,7 @@ func (manager *Manager) writeExports(asset *models.Asset, installDir string) ([]
 	paths := make([]string, 0)
 	now := time.Now().UTC()
 	exports := asset.Manifest.Exports
-	if len(exports) == 0 && (asset.Category == models.AssetCategoryPrompt || asset.Category == models.AssetCategoryAgent) {
+	if len(exports) == 0 && (asset.Category == models.AssetCategoryPrompt || asset.Category == models.AssetCategorySkill || asset.Category == models.AssetCategoryAgent) {
 		exports = []models.AssetExport{{Target: "codex", Mode: "prompt-file", Source: models.SkillFileName}}
 	}
 

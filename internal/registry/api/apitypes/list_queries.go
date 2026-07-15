@@ -38,5 +38,5 @@ type ListAssetsInput struct {
 	UpdatedSince string `query:"updated_since" json:"updated_since,omitempty" doc:"Filter assets updated since timestamp (RFC3339 datetime)" required:"false" example:"2025-08-07T13:15:04.280Z"`
 	Search       string `query:"search" json:"search,omitempty" doc:"Search assets by id, name, or description" required:"false" example:"java"`
 	Version      string `query:"version" json:"version,omitempty" doc:"Filter by version ('latest' for latest version, or an exact version like '1.2.3')" required:"false" example:"latest"`
-	Category     string `query:"category" json:"category,omitempty" doc:"Filter by asset category" required:"false" enum:"prompt,agent,mcp" example:"prompt"`
+	Category     string `query:"category" json:"category,omitempty" doc:"Filter by asset category" required:"false" enum:"prompt,skill,agent,mcp" example:"prompt"`
 }
